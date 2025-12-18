@@ -1,0 +1,183 @@
+[
+  {
+    "id": "sarah-johnson",
+    "name": "Sarah Johnson",
+    "role": "Senior Interaction Designer",
+    "skills": [
+      "User research",
+      "Prototyping",
+      "Accessibility",
+      "Service design"
+    ],
+    "availability": "Available",
+    "location": "London",
+    "experience": "8 years",
+    "bio": "I specialise in making complex services simple and accessible. I love helping others think through user journeys and interaction patterns.",
+    "canHelpWith": [
+      "Design critiques",
+      "Accessibility reviews",
+      "Prototyping workshops",
+      "Career mentoring"
+    ],
+    "interests": [
+      "Inclusive design",
+      "Design systems",
+      "User testing"
+    ]
+  },
+  {
+    "id": "james-chen",
+    "name": "James Chen",
+    "role": "Content Designer",
+    "skills": [
+      "Content strategy",
+      "Plain English",
+      "Information architecture",
+      "User needs"
+    ],
+    "availability": "Available",
+    "location": "Manchester",
+    "experience": "5 years",
+    "bio": "I help teams communicate clearly with users. Happy to review content, run writing workshops, or talk through content strategy.",
+    "canHelpWith": [
+      "Content critiques",
+      "Writing workshops",
+      "Content design coaching",
+      "IA reviews"
+    ],
+    "interests": [
+      "Plain language",
+      "Forms design",
+      "Gov writing"
+    ]
+  },
+  {
+    "id": "priya-patel",
+    "name": "Priya Patel",
+    "role": "Service Designer",
+    "skills": [
+      "Service blueprints",
+      "User research",
+      "Stakeholder mapping",
+      "Workshop facilitation"
+    ],
+    "availability": "Busy until Jan",
+    "location": "Birmingham",
+    "experience": "10 years",
+    "bio": "I work on end-to-end service design across digital and offline touchpoints. I can help with service mapping, research, and facilitation.",
+    "canHelpWith": [
+      "Service blueprinting",
+      "Research planning",
+      "Workshop design",
+      "Stakeholder engagement"
+    ],
+    "interests": [
+      "Service transformation",
+      "Co-design",
+      "System thinking"
+    ]
+  },
+  {
+    "id": "marcus-williams",
+    "name": "Marcus Williams",
+    "role": "Lead Designer",
+    "skills": [
+      "Design leadership",
+      "Design systems",
+      "Team mentoring",
+      "Strategy"
+    ],
+    "availability": "Available",
+    "location": "Remote",
+    "experience": "12 years",
+    "bio": "I lead our design team and have worked across many government services. I'm here to help with career development, design leadership, and strategic thinking.",
+    "canHelpWith": [
+      "Career coaching",
+      "Design leadership",
+      "Strategy sessions",
+      "Team challenges"
+    ],
+    "interests": [
+      "Design maturity",
+      "Team culture",
+      "Design ops"
+    ]
+  },
+  {
+    "id": "emma-davies",
+    "name": "Emma Davies",
+    "role": "Interaction Designer",
+    "skills": [
+      "Prototyping",
+      "Front-end code",
+      "Design systems",
+      "User testing"
+    ],
+    "availability": "Available",
+    "location": "Cardiff",
+    "experience": "4 years",
+    "bio": "I love building prototypes and working with the GOV.UK Design System. Happy to pair on coding prototypes or reviewing interaction design.",
+    "canHelpWith": [
+      "Prototyping support",
+      "Code reviews",
+      "Design system guidance",
+      "Pair designing"
+    ],
+    "interests": [
+      "Code",
+      "Design systems",
+      "Animation"
+    ]
+  },
+  {
+    "id": "alex-thompson",
+    "name": "Alex Thompson",
+    "role": "User Researcher",
+    "skills": [
+      "Qualitative research",
+      "Analysis",
+      "Research ops",
+      "Accessibility testing"
+    ],
+    "availability": "Available",
+    "location": "Edinburgh",
+    "experience": "6 years",
+    "bio": "I run user research across our services and love helping designers think about research. I can help plan studies, review discussion guides, or analyse findings.",
+    "canHelpWith": [
+      "Research planning",
+      "Discussion guide reviews",
+      "Analysis support",
+      "Research mentoring"
+    ],
+    "interests": [
+      "Research methods",
+      "Ethics",
+      "Inclusive research"
+    ]
+  },
+  {
+    "id": "peter-smith",
+    "name": "Peter Smith",
+    "role": "Head of Design",
+    "skills": [
+      "Coaching",
+      "Service Design",
+      "Problem Solving",
+      "Team dynamics"
+    ],
+    "availability": "Available",
+    "location": "York",
+    "experience": "20 years. Or so.",
+    "bio": "I never trained to be a designer; I did a Fine Art degree, but a passion for computers led me into the world of web design in 1996, and I've been here ever since. Commercial, start-up, and private sector experience.",
+    "canHelpWith": [
+      "Design critiques",
+      "Career mentoring",
+      "Prototyping workshops"
+    ],
+    "interests": [
+      "Leadership",
+      "Gaming",
+      "Developing people"
+    ]
+  }
+]

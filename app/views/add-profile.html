@@ -1,0 +1,151 @@
+{% extends "layouts/main.html" %}
+
+{% set pageName="Add team member profile" %}
+
+{% block content %}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    
+    <p class="govuk-body">
+      <a href="/browse" class="govuk-back-link">Back to team members</a>
+    </p>
+
+    <h1 class="govuk-heading-xl">
+      Add a team member profile
+    </h1>
+
+    {% if success %}
+      <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+        <div class="govuk-notification-banner__header">
+          <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+            Success
+          </h2>
+        </div>
+        <div class="govuk-notification-banner__content">
+          <h3 class="govuk-notification-banner__heading">
+            Profile added successfully
+          </h3>
+          <p class="govuk-body">
+            <a class="govuk-notification-banner__link" href="/profile/{{ newProfileId }}">View the new profile</a> or <a class="govuk-notification-banner__link" href="/browse">browse all team members</a>
+          </p>
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="/add-profile">
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="name">
+          Full name
+        </label>
+        <input class="govuk-input" id="name" name="name" type="text" required>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="role">
+          Job role
+        </label>
+        <input class="govuk-input" id="role" name="role" type="text" required>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="location">
+          Location
+        </label>
+        <input class="govuk-input" id="location" name="location" type="text" required>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="experience">
+          Years of experience
+        </label>
+        <div id="experience-hint" class="govuk-hint">
+          For example, "5 years" or "10 years"
+        </div>
+        <input class="govuk-input govuk-input--width-10" id="experience" name="experience" type="text" aria-describedby="experience-hint" required>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="bio">
+          About you
+        </label>
+        <div id="bio-hint" class="govuk-hint">
+          Write a short introduction about yourself and what you enjoy doing
+        </div>
+        <textarea class="govuk-textarea" id="bio" name="bio" rows="4" aria-describedby="bio-hint" required></textarea>
+      </div>
+
+      <div class="govuk-form-group">
+        <fieldset class="govuk-fieldset">
+          <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+            Availability
+          </legend>
+          <div class="govuk-radios" data-module="govuk-radios">
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input" id="availability-1" name="availability" type="radio" value="Available" checked>
+              <label class="govuk-label govuk-radios__label" for="availability-1">
+                Available
+              </label>
+            </div>
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input" id="availability-2" name="availability" type="radio" value="Busy until next month">
+              <label class="govuk-label govuk-radios__label" for="availability-2">
+                Busy until next month
+              </label>
+            </div>
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input" id="availability-3" name="availability" type="radio" value="Not available">
+              <label class="govuk-label govuk-radios__label" for="availability-3">
+                Not available
+              </label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="skills">
+          Skills
+        </label>
+        <div id="skills-hint" class="govuk-hint">
+          Enter your key skills, separated by commas
+        </div>
+        <textarea class="govuk-textarea" id="skills" name="skills" rows="3" aria-describedby="skills-hint" required></textarea>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="canHelpWith">
+          What you can help with
+        </label>
+        <div id="canHelpWith-hint" class="govuk-hint">
+          For example: Design critiques, Career mentoring, Prototyping workshops<br>
+          Separate each item with a comma
+        </div>
+        <textarea class="govuk-textarea" id="canHelpWith" name="canHelpWith" rows="3" aria-describedby="canHelpWith-hint" required></textarea>
+      </div>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="interests">
+          Professional interests
+        </label>
+        <div id="interests-hint" class="govuk-hint">
+          Topics you're interested in, separated by commas
+        </div>
+        <textarea class="govuk-textarea" id="interests" name="interests" rows="3" aria-describedby="interests-hint" required></textarea>
+      </div>
+
+      <div class="govuk-button-group">
+        <button class="govuk-button" data-module="govuk-button">
+          Add profile
+        </button>
+        <a class="govuk-link" href="/browse">Cancel</a>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}
+

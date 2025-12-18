@@ -1,19 +1,58 @@
 {% extends "layouts/main.html" %}
 
-{% set pageName="Home" %}
+{% set pageName="Find design help" %}
 
 {% block content %}
 
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
-
-    {% include "govuk-prototype-kit/includes/homepage-top.njk" %}
-
     <h1 class="govuk-heading-xl">
-      {{ serviceName }}
+      Find someone to help you
     </h1>
+    
+    <p class="govuk-body-l">
+      Connect with designers in the team for coaching, mentoring, design critiques and advice.
+    </p>
 
-    {% include "govuk-prototype-kit/includes/homepage-bottom.njk" %}
+    <h2 class="govuk-heading-m">What do you need help with?</h2>
+
+    <ul class="govuk-list">
+      <li>
+        <a class="govuk-link govuk-link--no-visited-state" href="/browse?filter=Design+critiques">
+          Get feedback on your designs
+        </a>
+      </li>
+      <li>
+        <a class="govuk-link govuk-link--no-visited-state" href="/browse?filter=coaching">
+          Find a mentor or coach
+        </a>
+      </li>
+      <li>
+        <a class="govuk-link govuk-link--no-visited-state" href="/browse?filter=Accessibility">
+          Get accessibility advice
+        </a>
+      </li>
+      <li>
+        <a class="govuk-link govuk-link--no-visited-state" href="/browse?filter=Prototyping">
+          Get help with prototyping
+        </a>
+      </li>
+      <li>
+        <a class="govuk-link govuk-link--no-visited-state" href="/browse?filter=Content">
+          Get content design support
+        </a>
+      </li>
+      <li>
+        <a class="govuk-link govuk-link--no-visited-state" href="/browse?filter=Research">
+          Get user research help
+        </a>
+      </li>
+    </ul>
+
+    <p class="govuk-body" style="margin-top: 2em;">
+      <a href="/browse" class="govuk-link govuk-link--no-visited-state">Browse all team members</a>
+    </p>
+
   </div>
 </div>
 

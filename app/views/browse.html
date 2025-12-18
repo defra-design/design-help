@@ -1,0 +1,93 @@
+{% extends "layouts/main.html" %}
+
+{% set pageName="Browse team members" %}
+
+{% block content %}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-full">
+    
+    <h1 class="govuk-heading-xl">
+      {% if filterText %}
+        Team members who can help with {{ filterText | lower }}
+      {% else %}
+        Browse team members
+      {% endif %}
+    </h1>
+
+    <p class="govuk-body">
+      <a href="/add-profile" class="govuk-button" data-module="govuk-button">
+        Add a team member
+      </a>
+    </p>
+
+    {% if filterText %}
+      <p class="govuk-body">
+        <a href="/browse" class="govuk-link">Clear filter and show all team members</a>
+      </p>
+    {% endif %}
+
+    {% if filteredMembers.length > 0 %}
+      
+      <div class="govuk-grid-row">
+        {% for member in filteredMembers %}
+          <div class="govuk-grid-column-one-half" style="margin-bottom: 2em;">
+            <div style="border: 1px solid #b1b4b6; padding: 20px; height: 100%;">
+              
+              <h2 class="govuk-heading-m" style="margin-bottom: 0.5em;">
+                <a href="/profile/{{ member.id }}" class="govuk-link govuk-link--no-visited-state">
+                  {{ member.name }}
+                </a>
+              </h2>
+              
+              <p class="govuk-body-s" style="color: #505a5f; margin-bottom: 1em;">
+                {{ member.role }}
+              </p>
+
+              <p class="govuk-body-s" style="margin-bottom: 1em;">
+                <strong>Experience:</strong> {{ member.experience }}<br>
+                <strong>Location:</strong> {{ member.location }}
+              </p>
+
+              {% if member.availability == "Available" %}
+                <strong class="govuk-tag govuk-tag--green">Available</strong>
+              {% else %}
+                <strong class="govuk-tag govuk-tag--grey">{{ member.availability }}</strong>
+              {% endif %}
+
+              <p class="govuk-body-s" style="margin-top: 1em;">
+                {{ member.bio }}
+              </p>
+
+              <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
+                <summary class="govuk-details__summary">
+                  <span class="govuk-details__summary-text">
+                    Can help with
+                  </span>
+                </summary>
+                <div class="govuk-details__text">
+                  <ul class="govuk-list govuk-list--bullet">
+                    {% for help in member.canHelpWith %}
+                      <li>{{ help }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </details>
+
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+    {% else %}
+      <p class="govuk-body">No team members found matching your criteria.</p>
+      <p class="govuk-body">
+        <a href="/browse" class="govuk-link">View all team members</a>
+      </p>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}
+
