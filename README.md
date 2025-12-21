@@ -22,13 +22,20 @@ A GOV.UK Prototype Kit application for connecting designers in your team for coa
 npm install
 ```
 
-### Running the Prototype
+### Running the Prototype Locally
 
 ```bash
 npm run dev
 ```
 
 The prototype will be available at: http://localhost:3000
+
+### Deploying to Heroku
+
+See [HEROKU_DEPLOYMENT.md](HEROKU_DEPLOYMENT.md) for complete deployment instructions including:
+- Password protection setup
+- Environment variables configuration
+- Data persistence considerations
 
 ## Project Structure
 

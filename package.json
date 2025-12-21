@@ -8,5 +8,9 @@
     "@govuk-prototype-kit/common-templates": "2.0.1",
     "govuk-frontend": "5.13.0",
     "govuk-prototype-kit": "13.18.1"
+  },
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
   }
 }
