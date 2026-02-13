@@ -6,8 +6,15 @@
   },
   "dependencies": {
     "@govuk-prototype-kit/common-templates": "2.0.1",
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^17.3.1",
+    "express-session": "^1.19.0",
     "govuk-frontend": "5.13.0",
-    "govuk-prototype-kit": "13.18.1"
+    "govuk-prototype-kit": "13.18.1",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "pg": "^8.18.0"
   },
   "engines": {
     "node": "20.x",

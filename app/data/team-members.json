@@ -179,5 +179,23 @@
       "Gaming",
       "Developing people"
     ]
+  },
+  {
+    "id": "nic-price",
+    "name": "Nic Price",
+    "role": "Legend",
+    "skills": [
+      "Some stuff"
+    ],
+    "availability": "Available",
+    "location": "Bristol",
+    "experience": "30",
+    "bio": "Nic's Bio",
+    "canHelpWith": [
+      "everything"
+    ],
+    "interests": [
+      "knowing design"
+    ]
   }
 ]

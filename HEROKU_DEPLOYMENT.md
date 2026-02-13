@@ -96,3 +96,7 @@ Edit `app/views/browse.html` and remove or comment out the "Add a team member" b
 
 If you want profiles added through the form to persist, let me know and I can implement Google Sheets storage.
 
+
+
+
+

@@ -1,0 +1,64 @@
+{% extends "layouts/main.html" %}
+
+{% block pageTitle %}
+Create an account - Defra Design Help
+{% endblock %}
+
+{% block content %}
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+
+        {% if error %}
+        <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert"
+            data-module="govuk-error-summary">
+            <h2 class="govuk-error-summary__title" id="error-summary-title">
+                There is a problem
+            </h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list">
+                    <li>
+                        <a href="#email">{{ error }}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <h1 class="govuk-heading-xl">Create an account</h1>
+
+        <form action="/register" method="post">
+
+            <div class="govuk-form-group">
+                <label class="govuk-label" for="name">
+                    Full name
+                </label>
+                <input class="govuk-input" id="name" name="name" type="text" autocomplete="name">
+            </div>
+
+            <div class="govuk-form-group">
+                <label class="govuk-label" for="email">
+                    Email address
+                </label>
+                <div id="email-hint" class="govuk-hint">
+                    You must use a @defra.gov.uk email address.
+                </div>
+                <input class="govuk-input" id="email" name="username" type="email" aria-describedby="email-hint"
+                    autocomplete="email">
+            </div>
+
+            <div class="govuk-form-group">
+                <label class="govuk-label" for="password">
+                    Password
+                </label>
+                <input class="govuk-input" id="password" name="password" type="password" autocomplete="new-password">
+            </div>
+
+            <button class="govuk-button" data-module="govuk-button" type="submit">
+                Create account
+            </button>
+
+        </form>
+
+    </div>
+</div>
+{% endblock %}

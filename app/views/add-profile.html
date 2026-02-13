@@ -6,7 +6,7 @@
 
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
-    
+
     <p class="govuk-body">
       <a href="/browse" class="govuk-back-link">Back to team members</a>
     </p>
@@ -16,21 +16,23 @@
     </h1>
 
     {% if success %}
-      <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
-        <div class="govuk-notification-banner__header">
-          <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
-            Success
-          </h2>
-        </div>
-        <div class="govuk-notification-banner__content">
-          <h3 class="govuk-notification-banner__heading">
-            Profile added successfully
-          </h3>
-          <p class="govuk-body">
-            <a class="govuk-notification-banner__link" href="/profile/{{ newProfileId }}">View the new profile</a> or <a class="govuk-notification-banner__link" href="/browse">browse all team members</a>
-          </p>
-        </div>
+    <div class="govuk-notification-banner govuk-notification-banner--success" role="alert"
+      aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+      <div class="govuk-notification-banner__header">
+        <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+          Success
+        </h2>
       </div>
+      <div class="govuk-notification-banner__content">
+        <h3 class="govuk-notification-banner__heading">
+          Profile added successfully
+        </h3>
+        <p class="govuk-body">
+          <a class="govuk-notification-banner__link" href="/profile/{{ newProfileId }}">View the new profile</a> or <a
+            class="govuk-notification-banner__link" href="/browse">browse all team members</a>
+        </p>
+      </div>
+    </div>
     {% endif %}
 
     <form method="post" action="/add-profile">
@@ -63,7 +65,8 @@
         <div id="experience-hint" class="govuk-hint">
           For example, "5 years" or "10 years"
         </div>
-        <input class="govuk-input govuk-input--width-10" id="experience" name="experience" type="text" aria-describedby="experience-hint" required>
+        <input class="govuk-input govuk-input--width-10" id="experience" name="experience" type="text"
+          aria-describedby="experience-hint" required>
       </div>
 
       <div class="govuk-form-group">
@@ -83,22 +86,63 @@
           </legend>
           <div class="govuk-radios" data-module="govuk-radios">
             <div class="govuk-radios__item">
-              <input class="govuk-radios__input" id="availability-1" name="availability" type="radio" value="Available" checked>
+              <input class="govuk-radios__input" id="availability-1" name="availability" type="radio" value="Available"
+                {{ "checked" if profile.availability_status=="Available" else "" }}>
               <label class="govuk-label govuk-radios__label" for="availability-1">
                 Available
               </label>
             </div>
             <div class="govuk-radios__item">
-              <input class="govuk-radios__input" id="availability-2" name="availability" type="radio" value="Busy until next month">
+              <input class="govuk-radios__input" id="availability-2" name="availability" type="radio" value="Busy"
+                data-aria-controls="conditional-availability-busy" {{ "checked" if profile.availability_status=="Busy"
+                else "" }}>
               <label class="govuk-label govuk-radios__label" for="availability-2">
-                Busy until next month
+                Busy
               </label>
             </div>
-            <div class="govuk-radios__item">
-              <input class="govuk-radios__input" id="availability-3" name="availability" type="radio" value="Not available">
-              <label class="govuk-label govuk-radios__label" for="availability-3">
-                Not available
-              </label>
+            <div class="govuk-radios__conditional govuk-radios__conditional--hidden" id="conditional-availability-busy">
+              <div class="govuk-form-group">
+                <fieldset class="govuk-fieldset" role="group" aria-describedby="busy-hint">
+                  <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+                    When will you be available again?
+                  </legend>
+                  <div id="busy-hint" class="govuk-hint">
+                    For example, 27 3 2024
+                  </div>
+                  <div class="govuk-date-input" id="busy-until">
+                    <div class="govuk-date-input__item">
+                      <div class="govuk-form-group">
+                        <label class="govuk-label govuk-date-input__label" for="busy-until-day">
+                          Day
+                        </label>
+                        <input class="govuk-input govuk-date-input__input govuk-input--width-2" id="busy-until-day"
+                          name="busy-until-day" type="text" inputmode="numeric"
+                          value="{{ profile.busy_until | date('d') if profile.busy_until else '' }}">
+                      </div>
+                    </div>
+                    <div class="govuk-date-input__item">
+                      <div class="govuk-form-group">
+                        <label class="govuk-label govuk-date-input__label" for="busy-until-month">
+                          Month
+                        </label>
+                        <input class="govuk-input govuk-date-input__input govuk-input--width-2" id="busy-until-month"
+                          name="busy-until-month" type="text" inputmode="numeric"
+                          value="{{ profile.busy_until | date('M') if profile.busy_until else '' }}">
+                      </div>
+                    </div>
+                    <div class="govuk-date-input__item">
+                      <div class="govuk-form-group">
+                        <label class="govuk-label govuk-date-input__label" for="busy-until-year">
+                          Year
+                        </label>
+                        <input class="govuk-input govuk-date-input__input govuk-input--width-4" id="busy-until-year"
+                          name="busy-until-year" type="text" inputmode="numeric"
+                          value="{{ profile.busy_until | date('Y') if profile.busy_until else '' }}">
+                      </div>
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
             </div>
           </div>
         </fieldset>
@@ -111,7 +155,8 @@
         <div id="skills-hint" class="govuk-hint">
           Enter your key skills, separated by commas
         </div>
-        <textarea class="govuk-textarea" id="skills" name="skills" rows="3" aria-describedby="skills-hint" required></textarea>
+        <textarea class="govuk-textarea" id="skills" name="skills" rows="3" aria-describedby="skills-hint"
+          required></textarea>
       </div>
 
       <div class="govuk-form-group">
@@ -122,7 +167,8 @@
           For example: Design critiques, Career mentoring, Prototyping workshops<br>
           Separate each item with a comma
         </div>
-        <textarea class="govuk-textarea" id="canHelpWith" name="canHelpWith" rows="3" aria-describedby="canHelpWith-hint" required></textarea>
+        <textarea class="govuk-textarea" id="canHelpWith" name="canHelpWith" rows="3"
+          aria-describedby="canHelpWith-hint" required></textarea>
       </div>
 
       <div class="govuk-form-group">
@@ -132,11 +178,12 @@
         <div id="interests-hint" class="govuk-hint">
           Topics you're interested in, separated by commas
         </div>
-        <textarea class="govuk-textarea" id="interests" name="interests" rows="3" aria-describedby="interests-hint" required></textarea>
+        <textarea class="govuk-textarea" id="interests" name="interests" rows="3" aria-describedby="interests-hint"
+          required></textarea>
       </div>
 
       <div class="govuk-button-group">
-        <button class="govuk-button" data-module="govuk-button">
+        <button class="govuk-button" data-module="govuk-button" type="submit">
           Add profile
         </button>
         <a class="govuk-link" href="/browse">Cancel</a>
@@ -148,7 +195,3 @@
 </div>
 
 {% endblock %}
-
-
-
-

@@ -8,10 +8,16 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 
 {% block header %}
 
-    {{ govukHeader() }}
-    {{ govukServiceNavigation({
-        serviceName: serviceName,
-        serviceUrl: "/"
-    })}}
+{{ govukHeader() }}
+{{ govukServiceNavigation({
+serviceName: serviceName,
+serviceUrl: "/",
+navigation: [
+{
+href: "/logout",
+text: "Sign out"
+}
+] if user
+})}}
 
 {% endblock %}
