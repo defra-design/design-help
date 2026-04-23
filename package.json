@@ -1,4 +1,13 @@
 {
+  "name": "design-help",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/defra-design/design-help.git"
+  },
+  "bugs": {
+    "url": "https://github.com/defra-design/design-help/issues"
+  },
+  "homepage": "https://github.com/defra-design/design-help#readme",
   "scripts": {
     "dev": "govuk-prototype-kit dev",
     "serve": "govuk-prototype-kit serve",

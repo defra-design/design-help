@@ -81,3 +81,15 @@ heroku open
 
 - **"Application Error"**: Run `heroku logs --tail` to see what went wrong.
 - **Database Connection**: The app automatically finds the database via the `DATABASE_URL` environment variable, which Heroku sets for you automatically when you add the addon. You don't need to set this manualy.
+
+## Frequently Asked Questions
+
+### Where is the "Site Password" stored?
+
+You might notice we use `PASSWORD` or `SESSION_SECRET` in the config step.
+**These are NOT stored in the application files.**
+
+They are stored in **Heroku's "Config Vars"** (Environment Variables). This is a secure vault separate from your code.
+
+- **Why?** If we wrote the password in a file (like `config.js`) and pushed it to GitHub, anyone could see it.
+- **How it works**: When the app starts up, Heroku effectively whispers these secrets into the application's ear (into the computer's memory), so the app can use them without ever writing them down.

@@ -1,154 +1,82 @@
-# Design Help - Team Connection Platform
+We are using **AI-augmented coding** (e.g. Cursor and similar tools) to help develop and maintain this project—pairing those assistants with human review and service patterns from GOV.UK and Defra.
 
-A GOV.UK Prototype Kit application for connecting designers in your team for coaching, mentoring, design critiques, and mutual support.
+# Design Help — team connection platform
+
+A [GOV.UK Prototype Kit](https://prototype-kit.service.gov.uk/docs) web application for connecting designers in your team for coaching, mentoring, design critiques, and mutual support.
+
+**Source:** [defra-design/design-help on GitHub](https://github.com/defra-design/design-help)
+
+## What is implemented today
+
+- **Stack:** Node.js, GOV.UK Prototype Kit, [GOV.UK Frontend](https://design-system.service.gov.uk/), **PostgreSQL** (via `pg`) for **users** and **profiles**
+- **Sign-in:** Registration and sign-in for **@defra.gov.uk** addresses, with email verification (verification is **still partly simulated in logs** until [GOV.UK Notify](https://www.notifications.service.gov.uk/) is wired—see [ROADMAP.md](ROADMAP.md))
+- **Sessions:** Server-side sessions stored in the database (PostgreSQL session store)
+- **Data:** Profiles and accounts **persist in PostgreSQL** when you use a real database (e.g. on Heroku with [Heroku Postgres](https://devcenter.heroku.com/articles/heroku-postgresql)), not in JSON files on the app server
+
+Legacy sample data may still sit under `app/data/` (e.g. for migration); **day-to-day data is the database** once configured.
 
 ## Features
 
-✅ **Home Page** - Quick links to find help by category (critiques, mentoring, accessibility, etc.)  
-✅ **Browse Team Members** - View all designers with their profiles, skills, and availability  
-✅ **Filtering** - Filter team members by skills, interests, or what they can help with  
-✅ **Individual Profiles** - Detailed profile pages showing experience, skills, and areas of expertise  
-✅ **Availability Status** - See who's available or busy at a glance  
-✅ **Add New Profiles** - Self-service form for team members to add their own profiles  
+- **Home** — quick links to find help by category (critiques, mentoring, accessibility, and so on)  
+- **Browse** — all designers with skills and availability; optional text filter  
+- **Profiles** — per-person pages  
+- **Add / edit profile** — signed-in users complete their details (including availability)  
 
-## Getting Started
+## Getting started (local)
 
 ### Prerequisites
-- Node.js v16, v18, v20, or v22 (Note: You're currently running v24 which may have compatibility issues)
 
-### Installation
+- **Node.js** v16, v18, v20, or v22 (the kit does not officially support v24+ yet)
+- A running **PostgreSQL** instance and a **`.env`** in the project root (see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) and [ROADMAP.md](ROADMAP.md) for variables such as `DATABASE_URL` and `SESSION_SECRET`)
+
+### Install and run
 
 ```bash
 npm install
-```
-
-### Running the Prototype Locally
-
-```bash
 npm run dev
 ```
 
-The prototype will be available at: http://localhost:3000
+The app is served at [http://localhost:3000](http://localhost:3000) by default.
 
-### Deploying to Heroku
+## Documentation index
 
-See [HEROKU_DEPLOYMENT.md](HEROKU_DEPLOYMENT.md) for complete deployment instructions including:
-- Password protection setup
-- Environment variables configuration
-- Data persistence considerations
+| Document | Purpose |
+|----------|---------|
+| [ROADMAP.md](ROADMAP.md) | **Plan** to run on Heroku, enable real email (Notify), persist data, and clean up loose ends |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Heroku Postgres, config vars, one-off `init-db` and schema steps |
+| [GOVUK_NOTIFY_GUIDE.md](GOVUK_NOTIFY_GUIDE.md) | Notify template, API key, and how your code will send verification emails |
+| [TECHNICAL_OVERVIEW.md](TECHNICAL_OVERVIEW.md) | Plain-English view of how the app, database, and security fit together |
+| [USER_GUIDE.md](USER_GUIDE.md) | End-user oriented notes where applicable |
+| [HEROKU_DEPLOYMENT.md](HEROKU_DEPLOYMENT.md) | **Legacy / needs refresh**—do not follow it as the main guide until it is updated to match Postgres + app auth; use **ROADMAP.md** and **DEPLOYMENT_GUIDE.md** instead |
 
-## Project Structure
+## Project structure (overview)
 
 ```
 app/
-├── data/
-│   └── team-members.json    # Team member profiles and information
-├── routes.js                # Route handlers for browse, profile, and add pages
-├── views/
-│   ├── index.html          # Home page with quick links
-│   ├── browse.html         # Team member listing with filtering
-│   ├── profile.html        # Individual profile page
-│   └── add-profile.html    # Form to add new team members
-└── config.json             # Service configuration
+├── data/              # Sample / migration JSON (not the live store on production)
+├── routes.js         # HTTP routes, auth, profile logic
+├── views/            # Nunjucks/HTML pages
+├── assets/          # JavaScript, Sass
+├── db.js            # PostgreSQL connection pool
+└── config.json
+scripts/
+├── init-db.js                    # Create tables, optional JSON migration
+└── update-schema-verification.js  # Add verification columns to users
 ```
 
-## Managing Team Members
+## Using the application (short)
 
-Edit `app/data/team-members.json` to add, remove, or update team member profiles.
+1. **Register** with a **@defra.gov.uk** email and complete **email verification** (in development the code may be shown in the terminal or page as a stand-in for Notify).  
+2. **Add or update your profile** at `/add-profile` after you are signed in.  
+3. **Browse** at `/browse` and open individual **profiles** from the list.  
+4. For **new filter links** on the home page, add rows in `app/views/index.html` pointing at `/browse?filter=...` as already done for other categories.  
 
-Each team member profile includes:
-- **Basic info**: name, role, location, experience
-- **Skills**: areas of expertise
-- **Availability**: current availability status
-- **Can help with**: specific types of support offered
-- **Interests**: professional interests
-- **Bio**: personal introduction
-
-Example profile structure:
-
-```json
-{
-  "id": "unique-id",
-  "name": "Designer Name",
-  "role": "Job Title",
-  "skills": ["Skill 1", "Skill 2"],
-  "availability": "Available",
-  "location": "City",
-  "experience": "X years",
-  "bio": "Short introduction...",
-  "canHelpWith": ["Activity 1", "Activity 2"],
-  "interests": ["Interest 1", "Interest 2"]
-}
-```
-
-## Using the Application
-
-### For Designers Seeking Help
-
-1. **Start from the home page** - Click on what you need help with (design critique, mentoring, etc.)
-2. **Browse filtered results** - See team members who can help with your specific need
-3. **View profiles** - Click on a name to see detailed information
-4. **Get in touch** - Contact them via Slack or email
-
-### For Team Members Adding Themselves
-
-1. **Go to the browse page** - Navigate to http://localhost:3000/browse
-2. **Click "Add a team member"** - Opens the profile creation form
-3. **Fill in your details**:
-   - Full name
-   - Job role
-   - Location
-   - Years of experience
-   - About you (bio)
-   - Availability status
-   - Skills (comma-separated)
-   - What you can help with (comma-separated)
-   - Professional interests (comma-separated)
-4. **Submit** - Your profile is automatically added to the system
-5. **View your profile** - Click the success message link to see your new profile
-
-### For Administrators
-
-1. **Add new team members** - Use the form at `/add-profile` or edit `team-members.json` directly
-2. **Update availability** - Edit the JSON file to change the "availability" field
-3. **Customize help categories** - Edit the home page links in `views/index.html`
-
-## Customization
-
-### Adding New Filter Categories
-
-Edit `app/views/index.html` to add new quick links:
-
-```html
-<li>
-  <a href="/browse?filter=YourKeyword">
-    Description of help type
-  </a>
-</li>
-```
-
-The filter will search across skills, canHelpWith, interests, role, and name fields.
-
-### Styling
-
-The prototype uses GOV.UK Frontend for styling. Custom styles can be added to `app/assets/sass/application.scss`.
-
-## Next Steps
-
-Consider adding:
-- Search functionality with more advanced filters
-- Booking/calendar integration
-- Messaging system
-- Feedback/rating system after sessions
-- Analytics to track popular help topics
-- Email notifications
-- Admin interface for managing profiles
+**Custom styling:** add or override in `app/assets/sass/application.scss`.
 
 ## Support
 
-For GOV.UK Prototype Kit documentation: https://prototype-kit.service.gov.uk/docs
+- GOV.UK Prototype Kit: [https://prototype-kit.service.gov.uk/docs](https://prototype-kit.service.gov.uk/docs)
 
-## License
+## Licence
 
-See LICENCE.txt
-
+See [LICENCE.txt](LICENCE.txt)
