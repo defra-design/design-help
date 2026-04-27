@@ -36,13 +36,31 @@ async function initDb() {
         bio TEXT,
         skills TEXT[],
         can_help_with TEXT[], -- stored as array of strings
+        can_help_with_text TEXT,
+        development_goals TEXT[],
+        development_goals_text TEXT,
+        project_team VARCHAR(255),
+        delivery_group VARCHAR(255),
+        linkedin_profile TEXT,
         interests TEXT[],
         availability_status VARCHAR(50) DEFAULT 'Available',
         busy_until DATE,
+        contact_email VARCHAR(255),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
         console.log('Created profiles table.');
+
+        await client.query('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS contact_email VARCHAR(255);');
+
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS approved_emails (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+        console.log('Created approved_emails table.');
 
         // Migrate existing data from JSON
         const teamMembersPath = path.join(__dirname, '..', 'app', 'data', 'team-members.json');
@@ -51,6 +69,9 @@ async function initDb() {
             const teamMembers = JSON.parse(fs.readFileSync(teamMembersPath, 'utf8'));
 
             for (const member of teamMembers) {
+                const contactEmail = member.email
+                    ? String(member.email).toLowerCase().trim()
+                    : null;
                 // Check if profile exists
                 const res = await client.query('SELECT id FROM profiles WHERE id = $1', [member.id]);
                 if (res.rows.length === 0) {
@@ -63,20 +84,38 @@ async function initDb() {
 
                     await client.query(`
                     INSERT INTO profiles (
-                        id, name, role, location, experience, bio, skills, can_help_with, interests, availability_status
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        id, name, project_team, delivery_group, role, location, experience, bio, linkedin_profile,
+                        can_help_with, can_help_with_text, development_goals, development_goals_text, availability_status,
+                        contact_email
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 `, [
                         member.id,
                         member.name,
+                        member.projectTeam || null,
+                        member.deliveryGroup || null,
                         member.role,
                         member.location,
                         member.experience,
                         member.bio,
-                        member.skills || [],
+                        member.linkedinProfile || null,
                         member.canHelpWith || [],
-                        member.interests || [],
-                        member.availability || 'Available'
+                        member.canHelpWithText || null,
+                        member.developmentGoals || member.interests || [],
+                        member.developmentGoalsText || null,
+                        member.availability || 'Available',
+                        contactEmail
                     ]);
+                } else if (contactEmail) {
+                    await client.query(
+                        'UPDATE profiles SET contact_email = $1 WHERE id = $2',
+                        [contactEmail, member.id]
+                    );
+                }
+                if (contactEmail) {
+                    await client.query(
+                        'INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING',
+                        [contactEmail]
+                    );
                 }
             }
             console.log(`Migrated ${teamMembers.length} profiles.`);

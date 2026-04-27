@@ -2,6 +2,11 @@
 
 Follow these steps to replace the "console log" simulation with real emails.
 
+## Design help (this project)
+
+- **Template ID (email verification):** `06e15154-5566-467d-b5be-26d3ad032d6f` — content includes `((code))`.
+- **API key:** do not commit it. Set `NOTIFY_API_KEY` in **Heroku config vars** (or local `.env`) when you have it — *to follow*.
+
 ## 1. Get your API Keys
 
 1. Log in to [GOV.UK Notify](https://www.notifications.service.gov.uk/).
@@ -40,7 +45,11 @@ Run this in your terminal:
 npm install notifications-node-client
 ```
 
-## 4. Update the Code
+## 4. Code in this repository
+
+The registration flow uses **`app/notify.js`** (client + `sendVerificationEmail`) and the **`/register` POST** handler in **`app/routes.js`**: when `NOTIFY_API_KEY` and `NOTIFY_TEMPLATE_ID` are set, a real email is sent; in **`NODE_ENV=production`**, those variables are **required** for new sign-ups. If you are wiring a fresh fork from scratch, you can follow the pattern below; otherwise you only need env vars and a matching template.
+
+### Original hand wiring notes (if adapting another codebase)
 
 In `app/routes.js`, update the registration logic:
 

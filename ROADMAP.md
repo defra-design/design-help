@@ -93,7 +93,8 @@ This document is a step-by-step plan to run the app on [Heroku](https://heroku.c
 2. **README.md** — Short pointer to this roadmap, Heroku, Postgres, and Notify.  
 3. **Secrets** — Never commit `.env`; confirm `.gitignore` includes it.  
 4. **Node version** — Match [Heroku’s Node support](https://devcenter.heroku.com/articles/nodejs-support#specifying-a-node-js-version) to the version in `package.json` `engines` (e.g. Node 20).  
-5. **Optional later** — Rate limits on auth routes, monitoring, admin tooling, etc.
+5. **Optional later** — Rate limits on auth routes, monitoring, admin tooling, etc.  
+6. **Backlog** — Make `delivery_group` a predefined dropdown list (single source of allowed values), instead of free text.
 
 ---
 

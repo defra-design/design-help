@@ -4,20 +4,42 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 #}
 
 {% extends "govuk-prototype-kit/layouts/govuk-branded.njk" %}
-{% from "govuk/components/service-navigation/macro.njk" import govukServiceNavigation %}
-
 {% block header %}
 
 {{ govukHeader() }}
-{{ govukServiceNavigation({
-serviceName: serviceName,
-serviceUrl: "/",
-navigation: [
-{
-href: "/logout",
-text: "Sign out"
-}
-] if user
-})}}
+{% if user %}
+<section class="govuk-service-navigation" aria-label="Menu">
+  <div class="govuk-width-container">
+    <div class="govuk-service-navigation__container" style="display: flex; align-items: center; gap: 16px;">
+      <nav class="govuk-service-navigation__wrapper" aria-label="Navigation" style="flex: 1;">
+        <ul class="govuk-service-navigation__list">
+          <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if currentPath == '/' else '' }}">
+            <a class="govuk-service-navigation__link" href="/">Design help</a>
+          </li>
+          <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if currentPath == '/browse' else '' }}">
+            <a class="govuk-service-navigation__link" href="/browse">Team members</a>
+          </li>
+          <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if currentPath == '/offers' else '' }}">
+            <a class="govuk-service-navigation__link" href="/offers">Offers</a>
+          </li>
+          <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if currentPath == '/requests' else '' }}">
+            <a class="govuk-service-navigation__link" href="/requests">Requests</a>
+          </li>
+        </ul>
+      </nav>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        {% if isAdmin and adminModeEnabled %}
+        <strong class="govuk-tag govuk-tag--yellow">Admin mode ON</strong>
+        {% endif %}
+        {% if isAdmin %}
+        <a class="govuk-link govuk-link--no-visited-state" href="/admin/users">Admin</a>
+        {% endif %}
+        <a class="govuk-link govuk-link--no-visited-state" href="/my-profile">My profile</a>
+        <a class="govuk-link govuk-link--no-visited-state" href="/logout">Sign out</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
 
 {% endblock %}

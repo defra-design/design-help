@@ -1,102 +1,61 @@
-# Heroku Deployment Guide
+# Heroku deployment (Design help)
 
-## Password Protection Setup
+This app uses **Passport** sign-in, **PostgreSQL** for data, **sessions in Postgres**, and **GOV.UK Notify** for verification emails in production.
 
-Your prototype is now configured for Heroku deployment with password protection.
+## What to set on Heroku (config vars)
 
-### Setting Up Password on Heroku
+| Variable | Purpose |
+|----------|---------|
+| `NODE_ENV` | `production` — **required** (enables secure cookies, turns off local auth bypass, requires Notify for new registrations) |
+| `DATABASE_URL` | Set automatically when you add **Heroku Postgres** |
+| `SESSION_SECRET` | Long random string (e.g. `openssl rand -hex 32`) |
+| `NOTIFY_API_KEY` | From [GOV.UK Notify](https://www.notifications.service.gov.uk/) → API integration |
+| `NOTIFY_TEMPLATE_ID` | Email template that includes `((code))` — see [GOVUK_NOTIFY_GUIDE.md](GOVUK_NOTIFY_GUIDE.md) |
+| `APPROVED_EMAILS` | Comma-separated `@defra.gov.uk` addresses allowed to register (plus any you add in the admin UI in the DB) |
+| `ADMIN_EMAILS` | Optional: comma-separated addresses that get admin access (defaults exist in code; set this to override in production) |
 
-You need to set environment variables in Heroku to enable password protection:
-
-#### Option 1: Via Heroku Dashboard (Easiest)
-1. Go to your Heroku app dashboard: https://dashboard.heroku.com/apps/YOUR-APP-NAME
-2. Click on **Settings** tab
-3. Click **Reveal Config Vars**
-4. Add these variables:
-
-```
-NODE_ENV = production
-USE_AUTH = true
-USERNAME = design-team
-PASSWORD = choose-a-secure-password
-```
-
-#### Option 2: Via Heroku CLI
-If you have Heroku CLI installed, run these commands:
+Example (replace values):
 
 ```bash
 heroku config:set NODE_ENV=production
-heroku config:set USE_AUTH=true
-heroku config:set USERNAME=design-team
-heroku config:set PASSWORD=your-secure-password
+heroku config:set SESSION_SECRET="$(openssl rand -hex 32)"
+heroku config:set NOTIFY_API_KEY="your-notify-key"
+heroku config:set NOTIFY_TEMPLATE_ID="your-template-id"
+heroku config:set APPROVED_EMAILS="you.1@defra.gov.uk,you.2@defra.gov.uk"
 ```
 
-### After Setting Variables
+**Notify trial mode** only delivers to team addresses you have invited in the Notify service; add testers there.
 
-Once you've set the config vars:
-1. Your next git push will automatically deploy
-2. Users will be prompted for username/password
-3. Everyone on your team uses the same credentials
+**Email verification in production:** if `NOTIFY_API_KEY` and `NOTIFY_TEMPLATE_ID` are missing, **new registrations are blocked** with a clear error (so you never get “stuck” with no way to receive a code). Locally, without those vars, the app still **logs the code to the console** and can show a dev-only code on the verify page when `NODE_ENV` is not `production`.
 
-### Important Notes
+**Auth bypass:** in production, the dev “bypass” login is off. In local dev it stays on unless you set `AUTH_BYPASS=false`.
 
-⚠️ **Data Persistence Warning:**
-- The "Add Profile" form will NOT persist data on Heroku
-- Any profiles added through the form will disappear when Heroku restarts (every 24 hours)
-- Only the profiles in your `team-members.json` file (in git) will persist
+## One-off: database and schema
 
-**Options:**
-1. **Remove the add profile form** for now (safest)
-2. **Use it knowing data is temporary** (for testing)
-3. **Implement Google Sheets** (for permanent storage)
+After deploy, run (replace `YOUR_APP`):
 
-### Testing Locally with Password
-
-To test password protection locally:
-
-1. Create a `.env` file in your project root (DON'T commit this):
-```
-NODE_ENV=production
-USE_AUTH=true
-USERNAME=design-team
-PASSWORD=test123
-```
-
-2. Run your prototype:
 ```bash
-npm start
+heroku run node scripts/init-db.js -a YOUR_APP
+heroku run node scripts/update-schema-verification.js -a YOUR_APP
 ```
 
-3. Visit http://localhost:3000 - you'll be prompted for login
+Ensure Heroku has Postgres attached so `DATABASE_URL` is set.
 
-### Deployment Steps
+## Deploy
 
-Since you've set up auto-deploy from GitHub:
+Push to the branch Heroku is tracking (often `main`). The `Procfile` runs the GOV.UK Prototype Kit listener.
 
-1. Commit these changes:
-```bash
-git add .
-git commit -m "Add Heroku configuration and password protection"
-git push origin main
-```
+## Smoke test on Heroku
 
-2. Heroku will automatically deploy
+1. Open the app URL; you should get the public home page or login, not a generic password wall (the old `USE_AUTH` + shared password flow is not used in this app).
+2. **Register** with an email that exists in `approved_emails` (or in `APPROVED_EMAILS` so it is seeded) and a password.
+3. You should **receive a real email** with a 6-digit code; enter it and land on the app **signed in** (no dev-only code on the page in production).
+4. **Sign in** again after logout using the same email and password; unverified accounts cannot sign in (Passport enforces `is_verified`).
 
-3. Set your config vars (see above)
+---
 
-4. Visit your Heroku app URL
+## Legacy note
 
-### Recommended: Disable Add Profile Form
+Earlier prototypes sometimes used `USE_AUTH` and a **single shared** username/password in front of the app. **This repository does not use that** for the current Passport/Defra email flow. Ignore old guides that only mention `USE_AUTH` and non-database profiles.
 
-To prevent confusion about data persistence, you may want to hide the add profile button:
-
-Edit `app/views/browse.html` and remove or comment out the "Add a team member" button.
-
-### Need Google Sheets Integration?
-
-If you want profiles added through the form to persist, let me know and I can implement Google Sheets storage.
-
-
-
-
-
+The **Add profile** and database-backed data **do** persist on Heroku as long as you use the Heroku **Postgres** add-on, not the old in-memory story.

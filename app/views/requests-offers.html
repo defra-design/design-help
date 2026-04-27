@@ -1,0 +1,56 @@
+{% extends "layouts/main.html" %}
+
+{% block content %}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-full">
+    <h1 class="govuk-heading-xl">{{ pageName }}</h1>
+
+    {% if pageIntro %}
+    <p class="govuk-body-l">{{ pageIntro }}</p>
+    {% endif %}
+
+    <p class="govuk-body">
+      <a class="govuk-link govuk-link--no-visited-state" href="/browse">Back to browse team members</a>
+    </p>
+
+    <form method="get" action="{{ formAction }}" class="govuk-!-margin-bottom-6">
+      <div class="govuk-form-group">
+        <label class="govuk-label" for="freeTextQuery">Keyword (optional)</label>
+        <input class="govuk-input" id="freeTextQuery" name="freeTextQuery" type="text" value="{{ freeTextQuery }}" aria-describedby="freeTextQuery-hint">
+        <div class="govuk-hint" id="freeTextQuery-hint">Searches the text and people’s names on this list.</div>
+      </div>
+      <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">
+        Scan
+      </button>
+    </form>
+
+    {% if freeTextEntries and freeTextEntries.length > 0 %}
+    <ul class="govuk-list">
+      {% for entry in freeTextEntries %}
+      <li style="border-left: 4px solid #b1b4b6; padding-left: 12px; margin-bottom: 16px;">
+        <p class="govuk-body govuk-!-margin-bottom-1">
+          <a class="govuk-link govuk-link--no-visited-state" href="/profile/{{ entry.id }}">{{ entry.name }}</a>
+          {% if entry.role %} — {{ entry.role }}{% endif %}
+        </p>
+        {% if not isAdmin and entry.is_own_profile %}
+        <p class="govuk-body-s govuk-!-margin-bottom-1">
+          <a class="govuk-link govuk-link--no-visited-state" href="/my-profile/edit">Edit my profile</a>
+        </p>
+        {% endif %}
+        {% if entry.can_help_with_text and (freeTextScope == "all" or freeTextScope == "can-help") %}
+        <p class="govuk-body-s govuk-!-margin-bottom-1"><strong>Can help with:</strong> {{ entry.can_help_with_text }}</p>
+        {% endif %}
+        {% if entry.development_goals_text and (freeTextScope == "all" or freeTextScope == "development-goals") %}
+        <p class="govuk-body-s govuk-!-margin-bottom-0"><strong>Development goals:</strong> {{ entry.development_goals_text }}</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="govuk-body">{{ emptyMessage }}</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

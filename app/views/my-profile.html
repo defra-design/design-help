@@ -1,0 +1,63 @@
+{% extends "layouts/main.html" %}
+
+{% set pageName="My profile" %}
+
+{% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <h1 class="govuk-heading-xl">My profile</h1>
+
+    {% if profile %}
+      <p class="govuk-body">
+        <a href="/my-profile/edit" class="govuk-button" data-module="govuk-button">Edit my profile</a>
+      </p>
+
+      <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Name</dt>
+          <dd class="govuk-summary-list__value">{{ profile.name }}</dd>
+        </div>
+        {% if profile.account_email or profile.contact_email %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Email</dt>
+          <dd class="govuk-summary-list__value">
+            <a class="govuk-link" href="mailto:{{ profile.account_email or profile.contact_email }}">{{ profile.account_email or profile.contact_email }}</a>
+          </dd>
+        </div>
+        {% endif %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Job title</dt>
+          <dd class="govuk-summary-list__value">{{ profile.role }}</dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Availability</dt>
+          <dd class="govuk-summary-list__value">{{ profile.availability_status }}</dd>
+        </div>
+      </dl>
+
+      {% if profile.can_help_with and profile.can_help_with.length %}
+      <h2 class="govuk-heading-m">Can help with tags</h2>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for item in profile.can_help_with %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if profile.development_goals and profile.development_goals.length %}
+      <h2 class="govuk-heading-m">Development goals tags</h2>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for item in profile.development_goals %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    {% else %}
+      <p class="govuk-body">You do not have a profile yet.</p>
+      <p class="govuk-body">
+        <a href="/my-profile/edit" class="govuk-button" data-module="govuk-button">Create my profile</a>
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

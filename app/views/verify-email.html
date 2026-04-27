@@ -35,9 +35,9 @@ Check your email - Defra Design Help
             sign in.
         </p>
 
-        {% if debugCode %}
+        {% if devVerificationCode %}
         <div class="govuk-inset-text">
-            <strong>Dev Mode:</strong> Your verification code is {{ debugCode }}
+            <strong>Local / dev (no GOV.UK Notify):</strong> your verification code is {{ devVerificationCode }}
         </div>
         {% endif %}
 

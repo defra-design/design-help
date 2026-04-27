@@ -2,200 +2,953 @@
   {
     "id": "sarah-johnson",
     "name": "Sarah Johnson",
+    "projectTeam": "Flood Resilience",
+    "deliveryGroup": "Defra Digital",
     "role": "Senior Interaction Designer",
-    "skills": [
-      "User research",
-      "Prototyping",
-      "Accessibility",
-      "Service design"
-    ],
     "availability": "Available",
     "location": "London",
     "experience": "8 years",
     "bio": "I specialise in making complex services simple and accessible. I love helping others think through user journeys and interaction patterns.",
+    "linkedinProfile": "https://www.linkedin.com/in/sarah-johnson-design",
     "canHelpWith": [
-      "Design critiques",
-      "Accessibility reviews",
-      "Prototyping workshops",
-      "Career mentoring"
+      "Figma",
+      "Accessible design",
+      "Prototyping tool kit",
+      "Workshops"
     ],
-    "interests": [
-      "Inclusive design",
-      "Design systems",
-      "User testing"
-    ]
+    "canHelpWithText": "Happy to review prototypes and help teams make interaction patterns accessible.",
+    "developmentGoals": [
+      "AI prompts",
+      "AI tooling",
+      "System thinking"
+    ],
+    "developmentGoalsText": "I want to build confidence using AI-supported workflows during early design exploration.",
+    "email": "sarah.johnson@defra.gov.uk"
   },
   {
     "id": "james-chen",
     "name": "James Chen",
-    "role": "Content Designer",
-    "skills": [
-      "Content strategy",
-      "Plain English",
-      "Information architecture",
-      "User needs"
-    ],
+    "projectTeam": "Farming Grants",
+    "deliveryGroup": "Rural Services",
+    "role": "Service Designer",
     "availability": "Available",
     "location": "Manchester",
     "experience": "5 years",
     "bio": "I help teams communicate clearly with users. Happy to review content, run writing workshops, or talk through content strategy.",
+    "linkedinProfile": "https://www.linkedin.com/in/james-chen-content",
     "canHelpWith": [
-      "Content critiques",
-      "Writing workshops",
-      "Content design coaching",
-      "IA reviews"
+      "Workshops",
+      "Stakeholder management",
+      "Value propositions"
     ],
-    "interests": [
-      "Plain language",
-      "Forms design",
-      "Gov writing"
-    ]
+    "canHelpWithText": "I can help shape plain-language propositions and facilitate collaborative content workshops.",
+    "developmentGoals": [
+      "Figma",
+      "Blueprints",
+      "Pre-discovery"
+    ],
+    "developmentGoalsText": "Looking to strengthen service framing skills earlier in project lifecycle.",
+    "email": "james.chen@defra.gov.uk"
   },
   {
     "id": "priya-patel",
     "name": "Priya Patel",
+    "projectTeam": "Biosecurity Services",
+    "deliveryGroup": "Animal and Plant Health",
     "role": "Service Designer",
-    "skills": [
-      "Service blueprints",
-      "User research",
-      "Stakeholder mapping",
-      "Workshop facilitation"
-    ],
     "availability": "Busy until Jan",
     "location": "Birmingham",
     "experience": "10 years",
     "bio": "I work on end-to-end service design across digital and offline touchpoints. I can help with service mapping, research, and facilitation.",
+    "linkedinProfile": "https://www.linkedin.com/in/priya-patel-service",
     "canHelpWith": [
-      "Service blueprinting",
-      "Research planning",
-      "Workshop design",
-      "Stakeholder engagement"
+      "Blueprints",
+      "System thinking",
+      "Stakeholder management",
+      "Workshops"
     ],
-    "interests": [
-      "Service transformation",
-      "Co-design",
-      "System thinking"
-    ]
+    "canHelpWithText": "Can support teams to map complex journeys and align cross-functional stakeholders.",
+    "developmentGoals": [
+      "AI prompts",
+      "AI tooling",
+      "Github Copilot"
+    ],
+    "developmentGoalsText": "I want practical ways to use AI tools for synthesis and workshop preparation.",
+    "email": "priya.patel@defra.gov.uk"
   },
   {
     "id": "marcus-williams",
     "name": "Marcus Williams",
+    "projectTeam": "Design Capability",
+    "deliveryGroup": "Digital Strategy",
     "role": "Lead Designer",
-    "skills": [
-      "Design leadership",
-      "Design systems",
-      "Team mentoring",
-      "Strategy"
-    ],
     "availability": "Available",
     "location": "Remote",
     "experience": "12 years",
     "bio": "I lead our design team and have worked across many government services. I'm here to help with career development, design leadership, and strategic thinking.",
+    "linkedinProfile": "https://www.linkedin.com/in/marcus-williams-design",
     "canHelpWith": [
-      "Career coaching",
-      "Design leadership",
-      "Strategy sessions",
-      "Team challenges"
+      "System thinking",
+      "Business planning",
+      "Stakeholder management",
+      "Value propositions"
     ],
-    "interests": [
-      "Design maturity",
-      "Team culture",
-      "Design ops"
-    ]
+    "canHelpWithText": "Happy to coach on strategic framing and influencing senior stakeholders.",
+    "developmentGoals": [
+      "Sustainable design",
+      "Accessible design"
+    ],
+    "developmentGoalsText": "",
+    "email": "marcus.williams@defra.gov.uk"
   },
   {
     "id": "emma-davies",
     "name": "Emma Davies",
+    "projectTeam": "Payments Modernisation",
+    "deliveryGroup": "Core Services",
     "role": "Interaction Designer",
-    "skills": [
-      "Prototyping",
-      "Front-end code",
-      "Design systems",
-      "User testing"
-    ],
     "availability": "Available",
     "location": "Cardiff",
     "experience": "4 years",
     "bio": "I love building prototypes and working with the GOV.UK Design System. Happy to pair on coding prototypes or reviewing interaction design.",
+    "linkedinProfile": "",
     "canHelpWith": [
-      "Prototyping support",
-      "Code reviews",
-      "Design system guidance",
-      "Pair designing"
+      "Prototyping tool kit",
+      "Figma",
+      "Accessible design"
     ],
-    "interests": [
-      "Code",
-      "Design systems",
-      "Animation"
-    ]
+    "canHelpWithText": "Can pair on rapid prototyping and interaction pattern iteration.",
+    "developmentGoals": [
+      "Github Copilot",
+      "AI prompts",
+      "Mural"
+    ],
+    "developmentGoalsText": "I would like support improving facilitation of remote discovery sessions.",
+    "email": "emma.davies@defra.gov.uk"
   },
   {
     "id": "alex-thompson",
     "name": "Alex Thompson",
+    "projectTeam": "Citizen Contact",
+    "deliveryGroup": "",
     "role": "User Researcher",
-    "skills": [
-      "Qualitative research",
-      "Analysis",
-      "Research ops",
-      "Accessibility testing"
-    ],
     "availability": "Available",
     "location": "Edinburgh",
     "experience": "6 years",
     "bio": "I run user research across our services and love helping designers think about research. I can help plan studies, review discussion guides, or analyse findings.",
+    "linkedinProfile": "https://www.linkedin.com/in/alex-thompson-uxr",
     "canHelpWith": [
-      "Research planning",
-      "Discussion guide reviews",
-      "Analysis support",
-      "Research mentoring"
+      "Pre-discovery",
+      "Workshops",
+      "Accessible design"
     ],
-    "interests": [
-      "Research methods",
-      "Ethics",
-      "Inclusive research"
-    ]
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Blueprints",
+      "System thinking"
+    ],
+    "developmentGoalsText": "Keen to connect research evidence more clearly into service blueprints.",
+    "email": "alex.thompson@defra.gov.uk"
   },
   {
     "id": "peter-smith",
     "name": "Peter Smith",
+    "projectTeam": "Design Leadership",
+    "deliveryGroup": "Defra Design",
     "role": "Head of Design",
-    "skills": [
-      "Coaching",
-      "Service Design",
-      "Problem Solving",
-      "Team dynamics"
-    ],
     "availability": "Available",
     "location": "York",
     "experience": "20 years. Or so.",
     "bio": "I never trained to be a designer; I did a Fine Art degree, but a passion for computers led me into the world of web design in 1996, and I've been here ever since. Commercial, start-up, and private sector experience.",
+    "linkedinProfile": "",
     "canHelpWith": [
-      "Design critiques",
-      "Career mentoring",
-      "Prototyping workshops"
+      "Stakeholder management",
+      "Business planning",
+      "Value propositions",
+      "System thinking"
     ],
-    "interests": [
-      "Leadership",
-      "Gaming",
-      "Developing people"
-    ]
+    "canHelpWithText": "I can support strategic framing, team development, and helping leaders make better design decisions.",
+    "developmentGoals": [
+      "AI tooling",
+      "Github Copilot",
+      "Sustainable design"
+    ],
+    "developmentGoalsText": "Interested in how AI can improve design leadership and service outcomes.",
+    "email": "peter.smith@defra.gov.uk"
   },
   {
     "id": "nic-price",
     "name": "Nic Price",
-    "role": "Legend",
-    "skills": [
-      "Some stuff"
-    ],
+    "projectTeam": "",
+    "deliveryGroup": "",
+    "role": "Lead Service Designer",
     "availability": "Available",
     "location": "Bristol",
-    "experience": "30",
-    "bio": "Nic's Bio",
+    "experience": "30 years",
+    "bio": "Experienced across digital transformation and complex service environments.",
+    "linkedinProfile": "",
     "canHelpWith": [
-      "everything"
+      "Blueprints",
+      "System thinking",
+      "Workshops",
+      "Stakeholder management"
     ],
-    "interests": [
-      "knowing design"
-    ]
+    "canHelpWithText": "Can help unblock teams through clearer service design thinking and facilitation.",
+    "developmentGoals": [
+      "AI prompts",
+      "AI tooling",
+      "Mural"
+    ],
+    "developmentGoalsText": "",
+    "email": "nic.price@defra.gov.uk"
+  },
+  {
+    "id": "olivia-brown",
+    "name": "Olivia Brown",
+    "projectTeam": "Flood Resilience",
+    "deliveryGroup": "Defra Digital",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "Leeds",
+    "experience": "7 years",
+    "bio": "I focus on simplifying complex interactions for internal and external users.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Figma",
+      "Accessible design",
+      "Design in agile",
+      "Coaching"
+    ],
+    "canHelpWithText": "Happy to help with pattern reviews and sprint design rituals.",
+    "developmentGoals": [
+      "Service assessments",
+      "Sustainable design"
+    ],
+    "developmentGoalsText": "",
+    "email": "olivia.brown@defra.gov.uk"
+  },
+  {
+    "id": "liam-walker",
+    "name": "Liam Walker",
+    "projectTeam": "Waste Tracking",
+    "deliveryGroup": "Environment Platforms",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Newcastle",
+    "experience": "9 years",
+    "bio": "Service designer working across policy and delivery to align end-to-end journeys.",
+    "linkedinProfile": "https://www.linkedin.com/in/liam-walker-service",
+    "canHelpWith": [
+      "Service blueprinting",
+      "System thinking",
+      "Workshops",
+      "Stakeholder management"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "Github Copilot",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "I want to use AI to speed up synthesis and options development.",
+    "email": "liam.walker@defra.gov.uk"
+  },
+  {
+    "id": "mia-clarke",
+    "name": "Mia Clarke",
+    "projectTeam": "Animal Health",
+    "deliveryGroup": "Rural Services",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "London",
+    "experience": "6 years",
+    "bio": "I support teams to turn policy intent into clear, useful content.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Value propositions",
+      "Workshops",
+      "Pre-discovery"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Blueprints",
+      "System thinking"
+    ],
+    "developmentGoalsText": "",
+    "email": "mia.clarke@defra.gov.uk"
+  },
+  {
+    "id": "noah-evans",
+    "name": "Noah Evans",
+    "projectTeam": "Payments Modernisation",
+    "deliveryGroup": "Core Services",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "Cardiff",
+    "experience": "5 years",
+    "bio": "I build tested prototypes and collaborate closely with engineers.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Prototyping tool kit",
+      "Figma",
+      "Github Copilot"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service blueprinting",
+      "Research planning"
+    ],
+    "developmentGoalsText": "",
+    "email": "noah.evans@defra.gov.uk"
+  },
+  {
+    "id": "ava-hughes",
+    "name": "Ava Hughes",
+    "projectTeam": "Citizen Contact",
+    "deliveryGroup": "Defra Digital",
+    "role": "User Researcher",
+    "availability": "Available",
+    "location": "Bristol",
+    "experience": "8 years",
+    "bio": "I run mixed-method research and support inclusive design decisions.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Research planning",
+      "Accessible design",
+      "Service assessments"
+    ],
+    "canHelpWithText": "Can support teams through robust planning and evidence synthesis.",
+    "developmentGoals": [
+      "AI prompts",
+      "Mural"
+    ],
+    "developmentGoalsText": "",
+    "email": "ava.hughes@defra.gov.uk"
+  },
+  {
+    "id": "ethan-green",
+    "name": "Ethan Green",
+    "projectTeam": "Design Capability",
+    "deliveryGroup": "Digital Strategy",
+    "role": "Lead Designer",
+    "availability": "Available",
+    "location": "Manchester",
+    "experience": "11 years",
+    "bio": "I coach multidisciplinary teams and help improve design quality.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Coaching",
+      "Stakeholder management",
+      "Business planning"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Sustainable design",
+      "Service assessments"
+    ],
+    "developmentGoalsText": "",
+    "email": "ethan.green@defra.gov.uk"
+  },
+  {
+    "id": "grace-hall",
+    "name": "Grace Hall",
+    "projectTeam": "Farming Grants",
+    "deliveryGroup": "Rural Services",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "York",
+    "experience": "7 years",
+    "bio": "I enjoy designing and testing service concepts in uncertain spaces.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Pre-discovery",
+      "Workshops",
+      "Value propositions"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Design in agile",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "grace.hall@defra.gov.uk"
+  },
+  {
+    "id": "henry-ward",
+    "name": "Henry Ward",
+    "projectTeam": "Biosecurity Services",
+    "deliveryGroup": "Animal and Plant Health",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "Birmingham",
+    "experience": "4 years",
+    "bio": "I focus on task flows, forms and reducing friction for users.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Accessible design",
+      "Figma",
+      "Design in agile"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service blueprinting",
+      "System thinking"
+    ],
+    "developmentGoalsText": "",
+    "email": "henry.ward@defra.gov.uk"
+  },
+  {
+    "id": "isla-scott",
+    "name": "Isla Scott",
+    "projectTeam": "Waste Tracking",
+    "deliveryGroup": "Environment Platforms",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Edinburgh",
+    "experience": "9 years",
+    "bio": "I support teams to shape clear propositions and user-centred content.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Value propositions",
+      "Workshops",
+      "Coaching"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "Github Copilot"
+    ],
+    "developmentGoalsText": "",
+    "email": "isla.scott@defra.gov.uk"
+  },
+  {
+    "id": "jack-turner",
+    "name": "Jack Turner",
+    "projectTeam": "Flood Resilience",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Leeds",
+    "experience": "10 years",
+    "bio": "I work across operational and digital journeys to reduce failure demand.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Service blueprinting",
+      "System thinking",
+      "Service assessments"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI tooling",
+      "Mural"
+    ],
+    "developmentGoalsText": "",
+    "email": "jack.turner@defra.gov.uk"
+  },
+  {
+    "id": "lily-adams",
+    "name": "Lily Adams",
+    "projectTeam": "Payments Modernisation",
+    "deliveryGroup": "Core Services",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "London",
+    "experience": "3 years",
+    "bio": "Early-career designer with strong prototyping and visual communication skills.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Figma",
+      "Prototyping tool kit",
+      "Mural"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Stakeholder management",
+      "Business planning"
+    ],
+    "developmentGoalsText": "",
+    "email": "lily.adams@defra.gov.uk"
+  },
+  {
+    "id": "oscar-baker",
+    "name": "Oscar Baker",
+    "projectTeam": "Animal Health",
+    "deliveryGroup": "Rural Services",
+    "role": "User Researcher",
+    "availability": "Available",
+    "location": "Newcastle",
+    "experience": "7 years",
+    "bio": "Researcher specialising in high-stakes, vulnerable user contexts.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Research planning",
+      "Accessible design",
+      "Pre-discovery"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service blueprinting",
+      "Design in agile"
+    ],
+    "developmentGoalsText": "",
+    "email": "oscar.baker@defra.gov.uk"
+  },
+  {
+    "id": "amelia-russell",
+    "name": "Amelia Russell",
+    "projectTeam": "Citizen Contact",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Manchester",
+    "experience": "8 years",
+    "bio": "I facilitate cross-team work to define and test service change options.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Workshops",
+      "Stakeholder management",
+      "Value propositions"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "amelia.russell@defra.gov.uk"
+  },
+  {
+    "id": "harry-morgan",
+    "name": "Harry Morgan",
+    "projectTeam": "Design Capability",
+    "deliveryGroup": "Digital Strategy",
+    "role": "Lead Designer",
+    "availability": "Available",
+    "location": "York",
+    "experience": "13 years",
+    "bio": "I mentor designers and help shape coherent operating models.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Coaching",
+      "Business planning",
+      "Service assessments"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Sustainable design",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "harry.morgan@defra.gov.uk"
+  },
+  {
+    "id": "ella-reed",
+    "name": "Ella Reed",
+    "projectTeam": "Farming Grants",
+    "deliveryGroup": "Rural Services",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Cardiff",
+    "experience": "6 years",
+    "bio": "I improve end-to-end clarity in guidance and transactional content.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Value propositions",
+      "Design in agile",
+      "Workshops"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Blueprints",
+      "System thinking"
+    ],
+    "developmentGoalsText": "",
+    "email": "ella.reed@defra.gov.uk"
+  },
+  {
+    "id": "archie-foster",
+    "name": "Archie Foster",
+    "projectTeam": "Waste Tracking",
+    "deliveryGroup": "Environment Platforms",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "Bristol",
+    "experience": "5 years",
+    "bio": "Designer focused on task-based journeys and clear interaction patterns.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Accessible design",
+      "Figma",
+      "Prototyping tool kit"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Stakeholder management",
+      "Service assessments"
+    ],
+    "developmentGoalsText": "",
+    "email": "archie.foster@defra.gov.uk"
+  },
+  {
+    "id": "chloe-simpson",
+    "name": "Chloe Simpson",
+    "projectTeam": "Flood Resilience",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Leeds",
+    "experience": "9 years",
+    "bio": "I help teams understand system constraints and sequence improvements.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "System thinking",
+      "Service blueprinting",
+      "Workshops"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "Github Copilot"
+    ],
+    "developmentGoalsText": "",
+    "email": "chloe.simpson@defra.gov.uk"
+  },
+  {
+    "id": "freddie-hunter",
+    "name": "Freddie Hunter",
+    "projectTeam": "Payments Modernisation",
+    "deliveryGroup": "Core Services",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "London",
+    "experience": "6 years",
+    "bio": "I prototype quickly and test often to reduce delivery risk.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Figma",
+      "Prototyping tool kit",
+      "Design in agile"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service blueprinting",
+      "Business planning"
+    ],
+    "developmentGoalsText": "",
+    "email": "freddie.hunter@defra.gov.uk"
+  },
+  {
+    "id": "sophie-mills",
+    "name": "Sophie Mills",
+    "projectTeam": "Biosecurity Services",
+    "deliveryGroup": "Animal and Plant Health",
+    "role": "User Researcher",
+    "availability": "Available",
+    "location": "Birmingham",
+    "experience": "10 years",
+    "bio": "I design practical research plans and improve team confidence in evidence.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Research planning",
+      "Coaching",
+      "Service assessments"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI tooling",
+      "Mural"
+    ],
+    "developmentGoalsText": "",
+    "email": "sophie.mills@defra.gov.uk"
+  },
+  {
+    "id": "george-bennett",
+    "name": "George Bennett",
+    "projectTeam": "Citizen Contact",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Edinburgh",
+    "experience": "8 years",
+    "bio": "I bridge policy and product to keep service outcomes user-focused.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Stakeholder management",
+      "System thinking",
+      "Workshops"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Sustainable design",
+      "Service assessments"
+    ],
+    "developmentGoalsText": "",
+    "email": "george.bennett@defra.gov.uk"
+  },
+  {
+    "id": "eva-knight",
+    "name": "Eva Knight",
+    "projectTeam": "Design Capability",
+    "deliveryGroup": "Digital Strategy",
+    "role": "Lead Designer",
+    "availability": "Available",
+    "location": "Remote",
+    "experience": "12 years",
+    "bio": "I support teams with design quality frameworks and coaching programmes.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Coaching",
+      "Service assessments",
+      "Business planning"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "Github Copilot",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "eva.knight@defra.gov.uk"
+  },
+  {
+    "id": "charlie-powell",
+    "name": "Charlie Powell",
+    "projectTeam": "Farming Grants",
+    "deliveryGroup": "Rural Services",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "York",
+    "experience": "4 years",
+    "bio": "I design content patterns that help people complete complex tasks confidently.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Value propositions",
+      "Design in agile",
+      "Accessible design"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service blueprinting",
+      "System thinking"
+    ],
+    "developmentGoalsText": "",
+    "email": "charlie.powell@defra.gov.uk"
+  },
+  {
+    "id": "ruby-ellis",
+    "name": "Ruby Ellis",
+    "projectTeam": "Waste Tracking",
+    "deliveryGroup": "Environment Platforms",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "Cardiff",
+    "experience": "5 years",
+    "bio": "I enjoy translating policy constraints into understandable flows.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Figma",
+      "Accessible design",
+      "Design in agile"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Business planning",
+      "Stakeholder management"
+    ],
+    "developmentGoalsText": "",
+    "email": "ruby.ellis@defra.gov.uk"
+  },
+  {
+    "id": "theo-fisher",
+    "name": "Theo Fisher",
+    "projectTeam": "Flood Resilience",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Manchester",
+    "experience": "11 years",
+    "bio": "I focus on multi-channel journey mapping and prioritisation decisions.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Service blueprinting",
+      "System thinking",
+      "Service assessments"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI tooling",
+      "Mural"
+    ],
+    "developmentGoalsText": "",
+    "email": "theo.fisher@defra.gov.uk"
+  },
+  {
+    "id": "ivy-lawson",
+    "name": "Ivy Lawson",
+    "projectTeam": "Payments Modernisation",
+    "deliveryGroup": "Core Services",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "London",
+    "experience": "6 years",
+    "bio": "I create practical prototypes to validate assumptions early.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Prototyping tool kit",
+      "Figma",
+      "Github Copilot"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service assessments",
+      "Sustainable design"
+    ],
+    "developmentGoalsText": "",
+    "email": "ivy.lawson@defra.gov.uk"
+  },
+  {
+    "id": "mason-webb",
+    "name": "Mason Webb",
+    "projectTeam": "Animal Health",
+    "deliveryGroup": "Rural Services",
+    "role": "User Researcher",
+    "availability": "Available",
+    "location": "Bristol",
+    "experience": "9 years",
+    "bio": "I run collaborative analysis and help teams focus on evidence-led choices.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Research planning",
+      "Workshops",
+      "Coaching"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Design in agile",
+      "Value propositions"
+    ],
+    "developmentGoalsText": "",
+    "email": "mason.webb@defra.gov.uk"
+  },
+  {
+    "id": "poppy-holmes",
+    "name": "Poppy Holmes",
+    "projectTeam": "Citizen Contact",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Leeds",
+    "experience": "7 years",
+    "bio": "I support teams in shaping coherent service change plans.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Stakeholder management",
+      "Value propositions",
+      "Workshops"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "poppy.holmes@defra.gov.uk"
+  },
+  {
+    "id": "leo-owen",
+    "name": "Leo Owen",
+    "projectTeam": "Design Capability",
+    "deliveryGroup": "Digital Strategy",
+    "role": "Lead Designer",
+    "availability": "Available",
+    "location": "Remote",
+    "experience": "14 years",
+    "bio": "I help teams establish healthy design practices and operating rhythms.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Coaching",
+      "Business planning",
+      "Service assessments"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Sustainable design",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "leo.owen@defra.gov.uk"
+  },
+  {
+    "id": "alice-harrison",
+    "name": "Alice Harrison",
+    "projectTeam": "Farming Grants",
+    "deliveryGroup": "Rural Services",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Newcastle",
+    "experience": "5 years",
+    "bio": "I improve user journeys with clear information architecture and content.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Value propositions",
+      "Accessible design",
+      "Workshops"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Service blueprinting",
+      "System thinking"
+    ],
+    "developmentGoalsText": "",
+    "email": "alice.harrison@defra.gov.uk"
+  },
+  {
+    "id": "dylan-murray",
+    "name": "Dylan Murray",
+    "projectTeam": "Waste Tracking",
+    "deliveryGroup": "Environment Platforms",
+    "role": "Interaction Designer",
+    "availability": "Available",
+    "location": "York",
+    "experience": "8 years",
+    "bio": "I work on design system adoption and scalable interaction patterns.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Figma",
+      "Design in agile",
+      "Accessible design"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "Business planning",
+      "Stakeholder management"
+    ],
+    "developmentGoalsText": "",
+    "email": "dylan.murray@defra.gov.uk"
+  },
+  {
+    "id": "hannah-ford",
+    "name": "Hannah Ford",
+    "projectTeam": "Flood Resilience",
+    "deliveryGroup": "Defra Digital",
+    "role": "Service Designer",
+    "availability": "Available",
+    "location": "Cardiff",
+    "experience": "10 years",
+    "bio": "I facilitate collaborative design in complex delivery environments.",
+    "linkedinProfile": "",
+    "canHelpWith": [
+      "Service blueprinting",
+      "System thinking",
+      "Workshops"
+    ],
+    "canHelpWithText": "",
+    "developmentGoals": [
+      "AI prompts",
+      "Mural",
+      "AI tooling"
+    ],
+    "developmentGoalsText": "",
+    "email": "hannah.ford@defra.gov.uk"
   }
 ]

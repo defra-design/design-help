@@ -1,0 +1,111 @@
+{% extends "layouts/main.html" %}
+
+{% set pageName="Admin" %}
+
+{% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-full">
+    <h1 class="govuk-heading-xl">Admin</h1>
+
+    {% if not adminModeEnabled %}
+    <p class="govuk-body">Admin mode is currently off.</p>
+    <form method="post" action="/admin/mode">
+      <button class="govuk-button" data-module="govuk-button" type="submit" name="action" value="on">
+        Enter admin mode
+      </button>
+    </form>
+    {% else %}
+    <div class="govuk-button-group" style="align-items: center;">
+      <a class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" href="/admin/add-profile">Add team member</a>
+      <form method="post" action="/admin/mode" style="margin: 0;">
+        <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-module="govuk-button" type="submit" name="action" value="off">
+          Save and leave admin
+        </button>
+      </form>
+    </div>
+
+    <p class="govuk-body-s">
+      Session changes: {{ changes.added.length }} added, {{ changes.edited.length }} edited, {{ changes.removed.length }} removed
+    </p>
+
+    <h2 class="govuk-heading-m">People access and profiles</h2>
+    <form method="post" action="/admin/approved-emails" class="govuk-!-margin-bottom-4">
+      <div class="govuk-form-group">
+        <label class="govuk-label" for="approved-email">Add person (email address)</label>
+        <input class="govuk-input govuk-!-width-two-thirds" id="approved-email" name="email" type="email" placeholder="name@defra.gov.uk">
+      </div>
+      <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">Add person</button>
+    </form>
+
+    {% if rows and rows.length > 0 %}
+    <table class="govuk-table govuk-!-margin-bottom-8">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Name</th>
+          <th scope="col" class="govuk-table__header">Job title</th>
+          <th scope="col" class="govuk-table__header">Email</th>
+          <th scope="col" class="govuk-table__header">Account</th>
+          <th scope="col" class="govuk-table__header">Action</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        {% for row in rows %}
+        <tr class="govuk-table__row" {% if row.pending_activation %}style="background: #f0f4f5;"{% endif %}>
+          <td class="govuk-table__cell">
+            {% if row.pending_activation %}
+            <span class="govuk-body" style="color: #505a5f;">—</span>
+            {% else %}
+            {{ row.name if row.name else "—" }}
+            {% endif %}
+          </td>
+          <td class="govuk-table__cell">{{ row.role if row.role else "—" }}</td>
+          <td class="govuk-table__cell">
+            <strong class="govuk-!-font-weight-bold">{{ row.email if row.email else "—" }}</strong>
+          </td>
+          <td class="govuk-table__cell">
+            {% if row.pending_activation %}
+            <strong class="govuk-tag govuk-tag--yellow">Pending</strong>
+            {% elif row.is_admin and row.profile_id %}
+            <strong class="govuk-tag govuk-tag--blue">Admin</strong>
+            {% elif row.profile_id %}
+            <strong class="govuk-tag govuk-tag--green">Active</strong>
+            {% else %}
+            —
+            {% endif %}
+            {% if row.profile_id and row.profile_id in changes.added %}
+            <p class="govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0">This session: added</p>
+            {% elif row.profile_id and row.profile_id in changes.edited %}
+            <p class="govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0">This session: edited</p>
+            {% endif %}
+          </td>
+          <td class="govuk-table__cell">
+            <div class="govuk-button-group" style="align-items: center;">
+            {% if row.profile_id %}
+            <a class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-module="govuk-button" href="/admin/users/{{ row.profile_id }}/edit">Edit</a>
+            <form method="post" action="/admin/profile/{{ row.profile_id }}/delete" class="govuk-!-margin-bottom-0" style="display: inline-block;" onsubmit="return confirm('Remove this profile?')">
+              <button class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" type="submit" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove</button>
+            </form>
+            {% elif row.approved_email_id and row.pending_activation %}
+            <form method="post" action="/admin/approved-emails/{{ row.approved_email_id }}/delete" class="govuk-!-margin-bottom-0" style="display: inline-block;" onsubmit="return confirm('Remove this email from the approved list? They will not be able to register.')">
+              <button class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" type="submit" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove</button>
+            </form>
+            {% elif row.approved_email_id %}
+            <form method="post" action="/admin/approved-emails/{{ row.approved_email_id }}/delete" class="govuk-!-margin-bottom-0" style="display: inline-block;" onsubmit="return confirm('Remove this email from the approved list?')">
+              <button class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" type="submit" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove</button>
+            </form>
+            {% else %}
+            —
+            {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="govuk-body">No approved people configured yet.</p>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

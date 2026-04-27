@@ -16,73 +16,225 @@
     </h1>
 
     <p class="govuk-body">
-      <a href="/add-profile" class="govuk-button" data-module="govuk-button">
-        Add a team member
+      {% if isAdmin %}
+      <a href="/admin/users" class="govuk-button" data-module="govuk-button">
+        Admin
       </a>
+      {% else %}
+      <a href="/my-profile" class="govuk-button" data-module="govuk-button">
+        My profile
+      </a>
+      {% endif %}
     </p>
 
-    {% if filterText %}
+    <h2 class="govuk-heading-m">Search and sort</h2>
+    <form method="get" action="/browse" class="govuk-!-margin-bottom-4">
+      <div class="govuk-form-group">
+        <label class="govuk-label" for="browse-filter">Search (change your filter)</label>
+        <div class="govuk-hint" id="browse-filter-hint">Matches “can help with” tags, extra profile text, development goals, job title, or name.</div>
+        <input class="govuk-input" id="browse-filter" name="filter" type="search" value="{{ filterText or '' }}"
+          aria-describedby="browse-filter-hint" autocomplete="off"
+          placeholder="e.g. coaching, Figma, accessibility">
+      </div>
+      <div class="govuk-form-group">
+        <label class="govuk-label" for="sort">Display order</label>
+        <select class="govuk-select" id="sort" name="sort">
+          <option value="a-z" {{ "selected" if sort == "a-z" else "" }}>Alphabetical (A to Z)</option>
+          <option value="z-a" {{ "selected" if sort == "z-a" else "" }}>Alphabetical (Z to A)</option>
+          <option value="profession" {{ "selected" if sort == "profession" else "" }}>Group by profession</option>
+        </select>
+      </div>
+      <div class="govuk-button-group">
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit">
+          Apply
+        </button>
+        {% if filterText %}
+        <a class="govuk-link govuk-link--no-visited-state" style="align-self: center; padding: 0.5em 0 0.5em 0.5em;" href="{% if sort and sort != 'a-z' %}/browse?sort={{ sort }}{% else %}/browse{% endif %}">Clear filter and show all team members</a>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if matchedHelpers and matchedHelpers.length > 0 %}
+    <section class="govuk-!-margin-bottom-8">
+      <h2 class="govuk-heading-l">People who can help with your development goals</h2>
       <p class="govuk-body">
-        <a href="/browse" class="govuk-link">Clear filter and show all team members</a>
+        Based on your goals: {{ userDevelopmentGoals | join(', ') }}
       </p>
+      <ul class="govuk-list govuk-list--bullet">
+        {% for helper in matchedHelpers %}
+        <li>
+          <a class="govuk-link govuk-link--no-visited-state" href="/profile/{{ helper.id }}">{{ helper.name }}</a>
+          {% if helper.role %} — {{ helper.role }}{% endif %}
+          {% if helper.shared_tags and helper.shared_tags.length %}
+            (matches: {{ helper.shared_tags | join(', ') }})
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
     {% endif %}
 
     {% if filteredMembers.length > 0 %}
-      
-      <div class="govuk-grid-row">
-        {% for member in filteredMembers %}
-          <div class="govuk-grid-column-one-half" style="margin-bottom: 2em;">
-            <div style="border: 1px solid #b1b4b6; padding: 20px; height: 100%;">
-              
-              <h2 class="govuk-heading-m" style="margin-bottom: 0.5em;">
-                <a href="/profile/{{ member.id }}" class="govuk-link govuk-link--no-visited-state">
-                  {{ member.name }}
-                </a>
-              </h2>
-              
-              <p class="govuk-body-s" style="color: #505a5f; margin-bottom: 1em;">
-                {{ member.role }}
-              </p>
+      {% if sort == "profession" %}
+        {% for group in groupedMembers %}
+        <h2 class="govuk-heading-l">{{ group.groupName }}</h2>
+        {% for member in group.members %}
+          {% if loop.index0 % 2 == 0 %}
+          <div class="govuk-grid-row">
+          {% endif %}
+            <div class="govuk-grid-column-one-half" style="margin-bottom: 2em;">
+              <div style="border: 1px solid #b1b4b6; padding: 20px; min-height: 100%;">
+                
+                <h2 class="govuk-heading-m" style="margin-bottom: 0.5em;">
+                  <a href="/profile/{{ member.id }}" class="govuk-link govuk-link--no-visited-state">
+                    {{ member.name }}
+                  </a>
+                </h2>
+                {% if not isAdmin and member.is_own_profile %}
+                <p class="govuk-body-s" style="margin-bottom: 0.5em;">
+                  <a href="/my-profile/edit" class="govuk-link govuk-link--no-visited-state">Edit my profile</a>
+                </p>
+                {% endif %}
+                
+                <p class="govuk-body-s" style="color: #505a5f; margin-bottom: 1em;">
+                  {{ member.role }}
+                </p>
 
-              <p class="govuk-body-s" style="margin-bottom: 1em;">
-                <strong>Experience:</strong> {{ member.experience }}<br>
-                <strong>Location:</strong> {{ member.location }}
-              </p>
+                <p class="govuk-body-s" style="margin-bottom: 1em;">
+                  <strong>Experience:</strong> {{ member.experience }}<br>
+                  <strong>Location:</strong> {{ member.location }}
+                </p>
 
-              {% if member.availability == "Available" %}
-                <strong class="govuk-tag govuk-tag--green">Available</strong>
-              {% else %}
-                <strong class="govuk-tag govuk-tag--grey">{{ member.availability }}</strong>
-              {% endif %}
+                {% if member.availability_status == "Free to help" %}
+                  <strong class="govuk-tag govuk-tag--green">Free to help</strong>
+                {% elif member.availability_status == "Some capacity" %}
+                  <strong class="govuk-tag govuk-tag--blue">Some capacity</strong>
+                {% else %}
+                  <strong class="govuk-tag govuk-tag--grey">Busy</strong>
+                {% endif %}
 
-              <p class="govuk-body-s" style="margin-top: 1em;">
-                {{ member.bio }}
-              </p>
+                <p class="govuk-body-s" style="margin-top: 1em;">
+                  {{ member.bio }}
+                </p>
 
-              <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
-                <summary class="govuk-details__summary">
-                  <span class="govuk-details__summary-text">
-                    Can help with
-                  </span>
-                </summary>
-                <div class="govuk-details__text">
-                  <ul class="govuk-list govuk-list--bullet">
-                    {% for help in member.canHelpWith %}
-                      <li>{{ help }}</li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              </details>
+                <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
+                  <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">
+                      Can help with
+                    </span>
+                  </summary>
+                  <div class="govuk-details__text">
+                    <ul class="govuk-list govuk-list--bullet">
+                      {% for help in member.can_help_with %}
+                        <li>{{ help }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </details>
 
+                <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
+                  <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">
+                      Development goals
+                    </span>
+                  </summary>
+                  <div class="govuk-details__text">
+                    <ul class="govuk-list govuk-list--bullet">
+                      {% for goal in member.development_goals %}
+                        <li>{{ goal }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </details>
+
+              </div>
             </div>
+          {% if loop.index0 % 2 == 1 or loop.last %}
           </div>
+          {% endif %}
         {% endfor %}
-      </div>
+        {% endfor %}
+      {% else %}
+        {% for member in filteredMembers %}
+          {% if loop.index0 % 2 == 0 %}
+          <div class="govuk-grid-row">
+          {% endif %}
+            <div class="govuk-grid-column-one-half" style="margin-bottom: 2em;">
+              <div style="border: 1px solid #b1b4b6; padding: 20px; min-height: 100%;">
+              
+                <h2 class="govuk-heading-m" style="margin-bottom: 0.5em;">
+                  <a href="/profile/{{ member.id }}" class="govuk-link govuk-link--no-visited-state">
+                    {{ member.name }}
+                  </a>
+                </h2>
+                {% if not isAdmin and member.is_own_profile %}
+                <p class="govuk-body-s" style="margin-bottom: 0.5em;">
+                  <a href="/my-profile/edit" class="govuk-link govuk-link--no-visited-state">Edit my profile</a>
+                </p>
+                {% endif %}
+                
+                <p class="govuk-body-s" style="color: #505a5f; margin-bottom: 1em;">
+                  {{ member.role }}
+                </p>
+
+                <p class="govuk-body-s" style="margin-bottom: 1em;">
+                  <strong>Experience:</strong> {{ member.experience }}<br>
+                  <strong>Location:</strong> {{ member.location }}
+                </p>
+
+                {% if member.availability_status == "Free to help" %}
+                  <strong class="govuk-tag govuk-tag--green">Free to help</strong>
+                {% elif member.availability_status == "Some capacity" %}
+                  <strong class="govuk-tag govuk-tag--blue">Some capacity</strong>
+                {% else %}
+                  <strong class="govuk-tag govuk-tag--grey">Busy</strong>
+                {% endif %}
+
+                <p class="govuk-body-s" style="margin-top: 1em;">
+                  {{ member.bio }}
+                </p>
+
+                <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
+                  <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">
+                      Can help with
+                    </span>
+                  </summary>
+                  <div class="govuk-details__text">
+                    <ul class="govuk-list govuk-list--bullet">
+                      {% for help in member.can_help_with %}
+                        <li>{{ help }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </details>
+
+                <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
+                  <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text">
+                      Development goals
+                    </span>
+                  </summary>
+                  <div class="govuk-details__text">
+                    <ul class="govuk-list govuk-list--bullet">
+                      {% for goal in member.development_goals %}
+                        <li>{{ goal }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </details>
+
+              </div>
+            </div>
+          {% if loop.index0 % 2 == 1 or loop.last %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
 
     {% else %}
-      <p class="govuk-body">No team members found matching your criteria.</p>
-      <p class="govuk-body">
-        <a href="/browse" class="govuk-link">View all team members</a>
+      <p class="govuk-body">No team members found matching your criteria. Try a different search in the “Search and sort” section, or
+        <a class="govuk-link" href="{% if sort and sort != 'a-z' %}/browse?sort={{ sort }}{% else %}/browse{% endif %}">view all team members</a>.
       </p>
     {% endif %}
 
