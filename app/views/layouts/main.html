@@ -28,11 +28,9 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
         </ul>
       </nav>
       <div style="display: flex; gap: 12px; align-items: center;">
-        {% if isAdmin and adminModeEnabled %}
-        <strong class="govuk-tag govuk-tag--yellow">Admin mode ON</strong>
-        {% endif %}
         {% if isAdmin %}
         <a class="govuk-link govuk-link--no-visited-state" href="/admin/users">Admin</a>
+        <a class="govuk-link govuk-link--no-visited-state" href="/admin/long-term-helping">Long-term help</a>
         {% endif %}
         <a class="govuk-link govuk-link--no-visited-state" href="/my-profile">My profile</a>
         <a class="govuk-link govuk-link--no-visited-state" href="/logout">Sign out</a>

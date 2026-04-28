@@ -8,9 +8,10 @@
     <h1 class="govuk-heading-xl">My profile</h1>
 
     {% if profile %}
-      <p class="govuk-body">
+      <div class="govuk-button-group">
         <a href="/my-profile/edit" class="govuk-button" data-module="govuk-button">Edit my profile</a>
-      </p>
+        <a href="/my-profile/helping" class="govuk-button govuk-button--secondary" data-module="govuk-button">I&rsquo;m helping someone</a>
+      </div>
 
       <dl class="govuk-summary-list">
         <div class="govuk-summary-list__row">
@@ -33,6 +34,18 @@
           <dt class="govuk-summary-list__key">Availability</dt>
           <dd class="govuk-summary-list__value">{{ profile.availability_status }}</dd>
         </div>
+        {% if profile.long_term_helping and profile.long_term_helping|length %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Long-term help (who I&rsquo;m helping)</dt>
+          <dd class="govuk-summary-list__value">
+            <ul class="govuk-list">
+              {% for h in profile.long_term_helping %}
+              <li><a class="govuk-link" href="/profile/{{ h.helpee_profile_id }}">{{ h.helpee_name }}</a></li>
+              {% endfor %}
+            </ul>
+          </dd>
+        </div>
+        {% endif %}
       </dl>
 
       {% if profile.can_help_with and profile.can_help_with.length %}

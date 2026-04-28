@@ -72,6 +72,19 @@ db.query(`
 })
 
 db.query(`
+  CREATE TABLE IF NOT EXISTS profile_long_term_helping (
+    id SERIAL PRIMARY KEY,
+    helper_profile_id VARCHAR(255) NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    helpee_profile_id VARCHAR(255) NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT profile_long_term_helping_not_self CHECK (helper_profile_id <> helpee_profile_id),
+    CONSTRAINT profile_long_term_helping_unique_pair UNIQUE (helper_profile_id, helpee_profile_id)
+  );
+`).catch((err) => {
+  console.error('Long-term helping table create failed', err)
+})
+
+db.query(`
   CREATE TABLE IF NOT EXISTS approved_emails (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -116,10 +129,6 @@ function normaliseAvailabilityStatus(status) {
   return allowedAvailabilityStatuses.find((allowedStatus) => allowedStatus.toLowerCase() === String(status || '').trim().toLowerCase())
 }
 
-function isAdminModeEnabled(req) {
-  return Boolean(req.session && req.session.adminMode === true)
-}
-
 function verifyEmailPageLocals (req, { email, error = null } = {}) {
   const showDevCode = process.env.NODE_ENV !== 'production' && Boolean(req.session && req.session.debugCode)
   return {
@@ -127,16 +136,6 @@ function verifyEmailPageLocals (req, { email, error = null } = {}) {
     error,
     devVerificationCode: showDevCode ? req.session.debugCode : null
   }
-}
-
-function ensureAdminMode(req, res, next) {
-  if (!isAdminUser(req.user)) {
-    return res.status(403).send('Admin access required')
-  }
-  if (!isAdminModeEnabled(req)) {
-    return res.redirect('/admin/users')
-  }
-  return next()
 }
 
 function getAdminSessionChanges(req) {
@@ -167,6 +166,106 @@ function getNextStep(step) {
   return idx >= 0 && idx < adminProfileWizardSteps.length - 1 ? adminProfileWizardSteps[idx + 1] : null
 }
 
+async function getHelpingHelpees (helperProfileId) {
+  if (!helperProfileId) {
+    return []
+  }
+  const h = await db.query(
+    `SELECT h.helpee_profile_id, p.name AS helpee_name
+     FROM profile_long_term_helping h
+     JOIN profiles p ON p.id = h.helpee_profile_id
+     WHERE h.helper_profile_id = $1
+     ORDER BY h.created_at ASC`,
+    [helperProfileId]
+  )
+  return h.rows
+}
+
+function parseHelpeeProfileIds (body) {
+  const v = body.helpeeProfileId
+  if (v == null || v === '') {
+    return []
+  }
+  const arr = Array.isArray(v) ? v : [v]
+  return [...new Set(arr.map((s) => String(s).trim()).filter(Boolean))]
+}
+
+function parseTagList (raw) {
+  if (!raw) {
+    return []
+  }
+  if (Array.isArray(raw)) {
+    return raw.map((item) => item && item.trim()).filter(Boolean)
+  }
+  return String(raw).split(',').map((item) => item.trim()).filter(Boolean)
+}
+
+async function getMyProfileFormContext (req) {
+  const { name, canHelpWithTags, developmentGoalsTags } = req.body
+  const profile = {
+    ...req.body,
+    can_help_with: Array.isArray(canHelpWithTags) ? canHelpWithTags.map((t) => t && t.trim()).filter(Boolean) : parseTagList(canHelpWithTags),
+    development_goals: Array.isArray(developmentGoalsTags) ? developmentGoalsTags.map((t) => t && t.trim()).filter(Boolean) : parseTagList(developmentGoalsTags)
+  }
+  return { profile }
+}
+
+async function getHelpingJourneyViewData (userId) {
+  const profile = await getProfileForUser(userId)
+  if (!profile || !profile.id) {
+    return { profile: null, designerOptions: [], helpingRows: [] }
+  }
+  const d = await db.query('SELECT id, name FROM profiles WHERE id != $1 ORDER BY name ASC', [profile.id])
+  const helpeeIds = (profile.long_term_helping || []).map((h) => h.helpee_profile_id)
+  const n = Math.min(25, Math.max(1, helpeeIds.length + 1))
+  const helpingRows = Array.from({ length: n }, (_, i) => ({ index: i, selectedId: helpeeIds[i] || '' }))
+  return { profile, designerOptions: d.rows, helpingRows }
+}
+
+function buildHelpingRowsFromRequestBody (body) {
+  const ar = normaliseAvailabilityStatus(body.availabilityStatus)
+  const helpeeIds = ar === 'Free to help' ? [] : parseHelpeeProfileIds(body)
+  const n = Math.min(25, Math.max(1, helpeeIds.length + 1))
+  return Array.from({ length: n }, (_, i) => ({ index: i, selectedId: helpeeIds[i] || '' }))
+}
+
+async function renderHelpingJourneyError (req, res, errorMessage) {
+  const { profile, designerOptions } = await getHelpingJourneyViewData(req.user.id)
+  if (!profile) {
+    return res.redirect('/my-profile/edit')
+  }
+  const helpingRows = buildHelpingRowsFromRequestBody(req.body)
+  return res.render('my-profile-helping', {
+    profile,
+    designerOptions,
+    helpingRows,
+    error: errorMessage,
+    success: false
+  })
+}
+
+async function setLongTermHelpingForHelper (helperProfileId, helpeeIds, client) {
+  const q = client || db
+  const seen = new Set()
+  const ids = helpeeIds.filter((id) => {
+    if (!id || id === helperProfileId || seen.has(id)) {
+      return false
+    }
+    seen.add(id)
+    return true
+  })
+  await q.query('DELETE FROM profile_long_term_helping WHERE helper_profile_id = $1', [helperProfileId])
+  for (const hid of ids) {
+    const ok = await q.query('SELECT 1 FROM profiles WHERE id = $1', [hid])
+    if (ok.rows.length) {
+      await q.query(
+        'INSERT INTO profile_long_term_helping (helper_profile_id, helpee_profile_id) VALUES ($1, $2)',
+        [helperProfileId, hid]
+      )
+    }
+  }
+}
+
 async function getProfileForUser(userId) {
   const resDb = await db.query(
     'SELECT p.*, u.email AS account_email FROM profiles p LEFT JOIN users u ON u.id = p.user_id WHERE p.user_id = $1',
@@ -176,6 +275,7 @@ async function getProfileForUser(userId) {
   if (profile) {
     profile.can_help_with = profile.can_help_with || []
     profile.development_goals = profile.development_goals || []
+    profile.long_term_helping = await getHelpingHelpees(profile.id)
   }
   return profile
 }
@@ -264,7 +364,6 @@ router.use((req, res, next) => {
   res.locals.user = req.user
   res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
-  res.locals.adminModeEnabled = isAdminModeEnabled(req)
   res.locals.isProduction = process.env.NODE_ENV === 'production'
   next()
 })
@@ -324,7 +423,6 @@ router.use((req, res, next) => {
   res.locals.user = req.user
   res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
-  res.locals.adminModeEnabled = isAdminModeEnabled(req)
   res.locals.isProduction = process.env.NODE_ENV === 'production'
   next()
 })
@@ -475,27 +573,7 @@ router.post('/verify-email', async (req, res) => {
 
 // --- APP ROUTES ---
 
-router.post('/admin/mode', ensureAdmin, (req, res) => {
-  const action = req.body.action
-  if (action === 'off') {
-    req.session.adminMode = false
-    req.session.adminProfileDraft = null
-    return res.redirect('/browse')
-  }
-  req.session.adminMode = true
-  req.session.adminSessionChanges = { edited: [], added: [], removed: [] }
-  return res.redirect('/admin/users')
-})
-
 router.get('/admin/users', ensureAdmin, async (req, res) => {
-  if (!isAdminModeEnabled(req)) {
-    return res.render('admin-users', {
-      adminModeEnabled: false,
-      rows: [],
-      changes: getAdminSessionChanges(req)
-    })
-  }
-
   try {
     const [profilesRes, approvedEmailsRes, usersRes] = await Promise.all([
       db.query('SELECT id, user_id, name, role, contact_email FROM profiles'),
@@ -548,7 +626,6 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
 
     const changes = getAdminSessionChanges(req)
     return res.render('admin-users', {
-      adminModeEnabled: true,
       rows,
       changes
     })
@@ -558,7 +635,7 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
   }
 })
 
-router.post('/admin/approved-emails', ensureAdminMode, async (req, res) => {
+router.post('/admin/approved-emails', ensureAdmin, async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase()
   if (!email || !email.endsWith('@defra.gov.uk')) {
     return res.redirect('/admin/users')
@@ -572,7 +649,7 @@ router.post('/admin/approved-emails', ensureAdminMode, async (req, res) => {
   }
 })
 
-router.post('/admin/approved-emails/:id/delete', ensureAdminMode, async (req, res) => {
+router.post('/admin/approved-emails/:id/delete', ensureAdmin, async (req, res) => {
   try {
     await db.query('DELETE FROM approved_emails WHERE id = $1', [req.params.id])
     res.redirect('/admin/users')
@@ -582,7 +659,7 @@ router.post('/admin/approved-emails/:id/delete', ensureAdminMode, async (req, re
   }
 })
 
-router.get('/admin/users/:id/edit', ensureAdminMode, async (req, res) => {
+router.get('/admin/users/:id/edit', ensureAdmin, async (req, res) => {
   try {
     const resDb = await db.query('SELECT * FROM profiles WHERE id = $1', [req.params.id])
     const profile = resDb.rows[0]
@@ -606,7 +683,7 @@ router.get('/admin/users/:id/edit', ensureAdminMode, async (req, res) => {
   }
 })
 
-router.post('/admin/users/:id/edit', ensureAdminMode, async (req, res) => {
+router.post('/admin/users/:id/edit', ensureAdmin, async (req, res) => {
   const parseList = (str) => {
     if (!str) return []
     if (Array.isArray(str)) return str.map(item => item && item.trim()).filter(item => item)
@@ -677,7 +754,7 @@ router.post('/admin/users/:id/edit', ensureAdminMode, async (req, res) => {
   }
 })
 
-router.get('/admin/add-profile', ensureAdminMode, (req, res) => {
+router.get('/admin/add-profile', ensureAdmin, (req, res) => {
   const wizardStep = getWizardStep(req.query.step)
   const draft = req.session.adminProfileDraft || {}
   res.render('add-profile', {
@@ -694,7 +771,7 @@ router.get('/admin/add-profile', ensureAdminMode, (req, res) => {
   })
 })
 
-router.post('/admin/add-profile', ensureAdminMode, async (req, res) => {
+router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
   const parseList = (str) => {
     if (!str) {
       return []
@@ -844,10 +921,101 @@ router.post('/admin/add-profile', ensureAdminMode, async (req, res) => {
   }
 })
 
-router.post('/admin/profile/:id/delete', ensureAdminMode, async (req, res) => {
+async function getProfileDeleteContext (profileId) {
+  const resDb = await db.query(
+    'SELECT p.*, u.email AS user_account_email FROM profiles p LEFT JOIN users u ON p.user_id = u.id WHERE p.id = $1',
+    [profileId]
+  )
+  const profile = resDb.rows[0]
+  if (!profile) {
+    return null
+  }
+  const displayEmail = String(profile.user_account_email || profile.contact_email || '').trim()
+  const emailLower = displayEmail.toLowerCase()
+  let approvedEmailId = null
+  if (emailLower) {
+    const ap = await db.query('SELECT id FROM approved_emails WHERE LOWER(email) = $1', [emailLower])
+    if (ap.rows[0]) {
+      approvedEmailId = ap.rows[0].id
+    }
+  }
+  return { profile, displayEmail, approvedEmailId }
+}
+
+router.get('/admin/profile/:id/confirm-delete', ensureAdmin, async (req, res) => {
   try {
-    await db.query('DELETE FROM profiles WHERE id = $1', [req.params.id])
-    trackAdminChange(req, 'removed', req.params.id)
+    const ctx = await getProfileDeleteContext(req.params.id)
+    if (!ctx) {
+      return res.status(404).send('Profile not found')
+    }
+    return res.render('admin-confirm-remove', {
+      kind: 'profile',
+      profile: ctx.profile,
+      displayEmail: ctx.displayEmail,
+      approvedEmailId: ctx.approvedEmailId,
+      profileId: ctx.profile.id
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Error')
+  }
+})
+
+router.get('/admin/approved-emails/:id/confirm-delete', ensureAdmin, async (req, res) => {
+  try {
+    const r = await db.query('SELECT * FROM approved_emails WHERE id = $1', [req.params.id])
+    if (r.rows.length === 0) {
+      return res.status(404).send('Not found')
+    }
+    return res.render('admin-confirm-remove', {
+      kind: 'email',
+      emailRow: r.rows[0]
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Error')
+  }
+})
+
+router.get('/admin/long-term-helping', ensureAdmin, async (req, res) => {
+  try {
+    const r = await db.query(
+      `SELECT h.id,
+              to_char(h.created_at AT TIME ZONE 'UTC', 'DD Mon YYYY') AS since_label,
+              h.helper_profile_id, h.helpee_profile_id,
+              ph.name AS helper_name, pe.name AS helpee_name
+       FROM profile_long_term_helping h
+       JOIN profiles ph ON ph.id = h.helper_profile_id
+       JOIN profiles pe ON pe.id = h.helpee_profile_id
+       ORDER BY h.created_at DESC`
+    )
+    return res.render('admin-long-term-helping', { relationships: r.rows })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Error loading data')
+  }
+})
+
+router.post('/admin/profile/:id/delete', ensureAdmin, async (req, res) => {
+  const profileId = req.params.id
+  try {
+    const ctx = await getProfileDeleteContext(profileId)
+    if (!ctx) {
+      return res.status(404).send('Profile not found')
+    }
+    const { approvedEmailId: expectedApprovedId } = ctx
+    const removeApproved = String(req.body.remove_approved || '') === 'yes'
+    const postedId = req.body.approved_email_id != null && req.body.approved_email_id !== ''
+      ? parseInt(req.body.approved_email_id, 10)
+      : null
+    if (removeApproved) {
+      if (!expectedApprovedId || !postedId || postedId !== expectedApprovedId) {
+        return res.status(400).send('Invalid allowlist remove request')
+      }
+      await db.query('DELETE FROM approved_emails WHERE id = $1', [expectedApprovedId])
+    }
+    await db.query('DELETE FROM profiles WHERE id = $1', [profileId])
+    trackAdminChange(req, 'removed', profileId)
     res.redirect('/admin/users')
   } catch (err) {
     console.error(err)
@@ -1092,6 +1260,74 @@ router.get('/add-profile', ensureAuthenticated, (req, res) => {
   res.redirect('/my-profile/edit')
 })
 
+// Short journey: who I'm helping + availability (Protected)
+router.get('/my-profile/helping', ensureAuthenticated, async (req, res) => {
+  try {
+    const { profile, designerOptions, helpingRows } = await getHelpingJourneyViewData(req.user.id)
+    if (!profile) {
+      return res.redirect('/my-profile/edit')
+    }
+    return res.render('my-profile-helping', {
+      profile,
+      designerOptions,
+      helpingRows,
+      error: null,
+      success: false
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Error loading page')
+  }
+})
+
+router.post('/my-profile/helping', ensureAuthenticated, async (req, res) => {
+  const { availabilityStatus } = req.body
+  const normalisedAvailabilityStatus = normaliseAvailabilityStatus(availabilityStatus)
+  if (!normalisedAvailabilityStatus) {
+    return renderHelpingJourneyError(req, res, 'Select a valid availability status.')
+  }
+  const pr = await db.query('SELECT id FROM profiles WHERE user_id = $1', [req.user.id])
+  if (pr.rows.length === 0) {
+    return res.redirect('/my-profile/edit')
+  }
+  const profileId = pr.rows[0].id
+  let helpeeIds = normalisedAvailabilityStatus === 'Free to help' ? [] : parseHelpeeProfileIds(req.body)
+  if (normalisedAvailabilityStatus !== 'Free to help' && helpeeIds.length > 0) {
+    for (const hid of helpeeIds) {
+      const c = await db.query('SELECT id FROM profiles WHERE id = $1', [hid])
+        if (c.rows.length === 0) {
+        return renderHelpingJourneyError(req, res, 'One of the designer choices is not valid.')
+      }
+    }
+  }
+  for (const hid of helpeeIds) {
+    if (hid === profileId) {
+      return renderHelpingJourneyError(req, res, 'You cannot add yourself as someone you are helping.')
+    }
+  }
+  const client = await db.pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('UPDATE profiles SET availability_status = $1 WHERE id = $2', [normalisedAvailabilityStatus, profileId])
+    await setLongTermHelpingForHelper(profileId, helpeeIds, client)
+    await client.query('COMMIT')
+  } catch (e) {
+    try { await client.query('ROLLBACK') } catch (err) { /* ignore */ }
+    console.error(e)
+    return renderHelpingJourneyError(req, res, 'Could not save. Try again.')
+  } finally {
+    client.release()
+  }
+  const { profile, designerOptions, helpingRows } = await getHelpingJourneyViewData(req.user.id)
+  return res.render('my-profile-helping', {
+    profile,
+    designerOptions,
+    helpingRows,
+    error: null,
+    success: true
+  })
+})
+
 // My profile form - GET (Protected)
 router.get('/my-profile/edit', ensureAuthenticated, async (req, res) => {
   try {
@@ -1137,45 +1373,36 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
   const canHelpWithTextWords = wordCount(canHelpWithText)
   const developmentGoalsTextWords = wordCount(developmentGoalsText)
   if (canHelpWithTextWords > 150 || developmentGoalsTextWords > 150) {
+    const ctx = await getMyProfileFormContext(req)
     return res.render('add-profile', {
       success: false,
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit',
       error: 'Additional details must be 150 words or fewer for both "Can help with" and "Development goals".',
-      profile: {
-        ...req.body,
-        can_help_with: parseList(canHelpWithTags),
-        development_goals: parseList(developmentGoalsTags)
-      }
+      ...ctx
     })
   }
   if (!normalisedRole) {
+    const ctx = await getMyProfileFormContext(req)
     return res.render('add-profile', {
       success: false,
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit',
       error: 'Select a valid GDaD job title from the list.',
-      profile: {
-        ...req.body,
-        can_help_with: parseList(canHelpWithTags),
-        development_goals: parseList(developmentGoalsTags)
-      }
+      ...ctx
     })
   }
   if (!normalisedAvailabilityStatus) {
+    const ctx = await getMyProfileFormContext(req)
     return res.render('add-profile', {
       success: false,
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit',
       error: 'Select a valid availability status from the list.',
-      profile: {
-        ...req.body,
-        can_help_with: parseList(canHelpWithTags),
-        development_goals: parseList(developmentGoalsTags)
-      }
+      ...ctx
     })
   }
 
@@ -1187,7 +1414,6 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
 
     if (existingRes.rows.length > 0) {
       profileId = existingRes.rows[0].id
-
       await db.query(`
             UPDATE profiles SET
                 name = $1, project_team = $2, delivery_group = $3, role = $4, location = $5,
@@ -1200,9 +1426,7 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
         parseList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus,
         userId
       ])
-
     } else {
-      // Should not happen if registered via app, but robust fallback
       profileId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
       await db.query(`
             INSERT INTO profiles (
@@ -1215,29 +1439,26 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
       ])
     }
 
-    // Fetch the updated profile to display back
-    const updatedProfile = {
-      ...req.body
-    }
+    const fresh = await getProfileForUser(userId)
 
     res.render('add-profile', {
       success: true,
       newProfileId: profileId,
-      profile: updatedProfile,
+      profile: fresh || { ...req.body },
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit'
     })
-
   } catch (err) {
     console.error(err)
-    res.render('add-profile', {
+    const ctx = await getMyProfileFormContext(req)
+    return res.render('add-profile', {
       success: false,
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit',
       error: 'Error saving profile',
-      profile: req.body
+      ...ctx
     })
   }
 })

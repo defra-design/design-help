@@ -62,6 +62,18 @@ async function initDb() {
     `);
         console.log('Created approved_emails table.');
 
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS profile_long_term_helping (
+        id SERIAL PRIMARY KEY,
+        helper_profile_id VARCHAR(255) NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        helpee_profile_id VARCHAR(255) NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT profile_long_term_helping_not_self CHECK (helper_profile_id <> helpee_profile_id),
+        CONSTRAINT profile_long_term_helping_unique_pair UNIQUE (helper_profile_id, helpee_profile_id)
+      );
+    `);
+        console.log('Ensured profile_long_term_helping table.');
+
         // Migrate existing data from JSON
         const teamMembersPath = path.join(__dirname, '..', 'app', 'data', 'team-members.json');
         if (fs.existsSync(teamMembersPath)) {
