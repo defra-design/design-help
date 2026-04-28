@@ -22,11 +22,9 @@ const authBypassUser = {
 }
 let resolvedAuthBypassUser = null
 const hardcodedAdminEmails = [
-  'peter.smith@defra.gov.uk',
-  'pete@defra.gov.uk',
-  'line.manager.one@defra.gov.uk',
-  'line.manager.two@defra.gov.uk',
-  'test.user@defra.gov.uk'
+  'pete.smith@defra.gov.uk',
+  'chris.hawker@defra.gov.uk',
+  'louise.tudor@defra.gov.uk'
 ]
 const adminEmails = new Set(
   (process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',') : hardcodedAdminEmails)
@@ -34,8 +32,9 @@ const adminEmails = new Set(
     .filter(Boolean)
 )
 const defaultApprovedEmails = [
-  'pete@defra.gov.uk',
-  'peter.smith@defra.gov.uk'
+  'pete.smith@defra.gov.uk',
+  'chris.hawker@defra.gov.uk',
+  'louise.tudor@defra.gov.uk'
 ]
 const allowedRoles = [
   // Interaction Design (GDaD-aligned progression)
