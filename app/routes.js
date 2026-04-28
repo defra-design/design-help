@@ -105,6 +105,15 @@ db.query(`
   console.error('Approved email table setup failed', err)
 })
 
+// Keep user auth schema aligned for production environments.
+db.query(`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS verification_code VARCHAR(16)
+`).catch((err) => {
+  console.error('User auth schema update failed', err)
+})
+
 function isAdminUser(user) {
   return Boolean(user && user.email && adminEmails.has(user.email.toLowerCase()))
 }
