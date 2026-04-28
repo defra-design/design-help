@@ -1,5 +1,6 @@
 {
   "serviceName": "Design Help",
+  "releaseVersion": "2026.04.28.1",
   "plugins": {
     "govuk-frontend": {
       "rebrand": true

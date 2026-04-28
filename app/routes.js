@@ -5,6 +5,7 @@
 
 const govukPrototypeKit = require('govuk-prototype-kit')
 const router = govukPrototypeKit.requests.setupRouter()
+const appConfig = require('./config.json')
 const session = require('express-session')
 const pgSession = require('connect-pg-simple')(session)
 const passport = require('passport')
@@ -59,6 +60,48 @@ const allowedRoles = [
 ]
 const allowedAvailabilityStatuses = ['Busy', 'Some capacity', 'Free to help']
 const adminProfileWizardSteps = ['details', 'about', 'can-help', 'development-goals']
+const codeReleaseVersion = String(appConfig.releaseVersion || '').trim() || 'dev'
+
+db.query(`
+  CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user',
+    is_verified BOOLEAN DEFAULT FALSE,
+    verification_code VARCHAR(16),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch((err) => {
+  console.error('Users table setup failed', err)
+})
+
+db.query(`
+  CREATE TABLE IF NOT EXISTS profiles (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(255),
+    location VARCHAR(255),
+    experience TEXT,
+    bio TEXT,
+    skills TEXT[],
+    can_help_with TEXT[],
+    can_help_with_text TEXT,
+    development_goals TEXT[],
+    development_goals_text TEXT,
+    project_team VARCHAR(255),
+    delivery_group VARCHAR(255),
+    linkedin_profile TEXT,
+    interests TEXT[],
+    availability_status VARCHAR(50) DEFAULT 'Some capacity',
+    busy_until DATE,
+    contact_email VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  )
+`).catch((err) => {
+  console.error('Profiles table setup failed', err)
+})
 
 // Keep profile schema aligned for local iteration.
 db.query(`
@@ -374,17 +417,11 @@ passport.deserializeUser(async (id, done) => {
 
 // Make user available to all views
 router.use((req, res, next) => {
-  const releaseVersion = String(
-    process.env.APP_VERSION ||
-    process.env.HEROKU_RELEASE_VERSION ||
-    process.env.SOURCE_VERSION ||
-    'dev'
-  ).trim()
   res.locals.user = req.user
   res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
-  res.locals.appVersion = releaseVersion
+  res.locals.appVersion = codeReleaseVersion
   next()
 })
 
@@ -440,17 +477,11 @@ function ensureAuthenticated(req, res, next) {
 
 // Make user available in templates
 router.use((req, res, next) => {
-  const releaseVersion = String(
-    process.env.APP_VERSION ||
-    process.env.HEROKU_RELEASE_VERSION ||
-    process.env.SOURCE_VERSION ||
-    'dev'
-  ).trim()
   res.locals.user = req.user
   res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
-  res.locals.appVersion = releaseVersion
+  res.locals.appVersion = codeReleaseVersion
   next()
 })
 
