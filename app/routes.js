@@ -36,6 +36,11 @@ const defaultApprovedEmails = [
   'chris.hawker@defra.gov.uk',
   'louise.tudor@defra.gov.uk'
 ]
+const approvedEmailsFallback = new Set(
+  (process.env.APPROVED_EMAILS ? process.env.APPROVED_EMAILS.split(',') : defaultApprovedEmails)
+    .map((email) => String(email || '').trim().toLowerCase())
+    .filter(Boolean)
+)
 const allowedRoles = [
   // Interaction Design (GDaD-aligned progression)
   'Interaction Designer',
@@ -465,15 +470,23 @@ router.get('/register', (req, res) => {
 
 router.post('/register', async (req, res) => {
   const { name, username, password } = req.body
+  const emailLower = String(username || '').trim().toLowerCase()
 
   // Defra Email Check
-  if (!username.endsWith('@defra.gov.uk')) {
+  if (!emailLower.endsWith('@defra.gov.uk')) {
     return res.render('register', { error: 'You must use a @defra.gov.uk email address.' })
   }
 
   try {
-    const approvedRes = await db.query('SELECT 1 FROM approved_emails WHERE email = $1 LIMIT 1', [username.toLowerCase()])
-    if (approvedRes.rows.length === 0) {
+    let isApproved = false
+    try {
+      const approvedRes = await db.query('SELECT 1 FROM approved_emails WHERE email = $1 LIMIT 1', [emailLower])
+      isApproved = approvedRes.rows.length > 0
+    } catch (approvedErr) {
+      console.error('Approved emails lookup failed, using fallback list', approvedErr)
+      isApproved = approvedEmailsFallback.has(emailLower)
+    }
+    if (!isApproved) {
       return res.render('register', { error: 'This email is not on the approved team list yet. Ask an admin to add it.' })
     }
 
@@ -491,7 +504,7 @@ router.post('/register', async (req, res) => {
     // Create User (Unverified)
     const userRes = await db.query(
       'INSERT INTO users (email, password_hash, is_verified, verification_code) VALUES ($1, $2, $3, $4) RETURNING id',
-      [username, hashedPassword, false, verificationCode]
+      [emailLower, hashedPassword, false, verificationCode]
     )
     const userId = userRes.rows[0].id
 
@@ -509,7 +522,7 @@ router.post('/register', async (req, res) => {
 
     if (isNotifyConfigured()) {
       try {
-        await sendVerificationEmail(username, verificationCode)
+        await sendVerificationEmail(emailLower, verificationCode)
       } catch (notifyErr) {
         console.error('Notify send failed', notifyErr)
         try {
@@ -525,11 +538,11 @@ router.post('/register', async (req, res) => {
     } else {
       // Local / dev: no API keys; log and optionally show a dev-only code in the verify UI
       console.log('---------------------------------------------------')
-      console.log(`EMAIL SIMULATION: Verification code for ${username} is: ${verificationCode}`)
+      console.log(`EMAIL SIMULATION: Verification code for ${emailLower} is: ${verificationCode}`)
       console.log('---------------------------------------------------')
     }
 
-    req.session.registrationEmail = username
+    req.session.registrationEmail = emailLower
     if (process.env.NODE_ENV !== 'production' && !isNotifyConfigured()) {
       req.session.debugCode = verificationCode
     } else {
@@ -542,7 +555,8 @@ router.post('/register', async (req, res) => {
     if (err.code === '23505') { // Unique violation
       res.render('register', { error: 'Email already exists.' })
     } else {
-      res.render('register', { error: 'An error occurred.' })
+      const hint = (err && err.message) ? ` (${err.message})` : ''
+      res.render('register', { error: `An error occurred.${hint}` })
     }
   }
 })
