@@ -374,10 +374,17 @@ passport.deserializeUser(async (id, done) => {
 
 // Make user available to all views
 router.use((req, res, next) => {
+  const releaseVersion = String(
+    process.env.APP_VERSION ||
+    process.env.HEROKU_RELEASE_VERSION ||
+    process.env.SOURCE_VERSION ||
+    'dev'
+  ).trim()
   res.locals.user = req.user
   res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
+  res.locals.appVersion = releaseVersion
   next()
 })
 
@@ -433,10 +440,17 @@ function ensureAuthenticated(req, res, next) {
 
 // Make user available in templates
 router.use((req, res, next) => {
+  const releaseVersion = String(
+    process.env.APP_VERSION ||
+    process.env.HEROKU_RELEASE_VERSION ||
+    process.env.SOURCE_VERSION ||
+    'dev'
+  ).trim()
   res.locals.user = req.user
   res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
+  res.locals.appVersion = releaseVersion
   next()
 })
 

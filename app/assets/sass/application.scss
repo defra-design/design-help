@@ -4,3 +4,8 @@
 // 
 
 // Add extra styles here
+
+/* Hide prototype data reset affordance in this research prototype. */
+a[href*="clear-data"] {
+  display: none !important;
+}

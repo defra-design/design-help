@@ -28,6 +28,7 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
         </ul>
       </nav>
       <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="govuk-body-s govuk-!-margin-bottom-0">Version: {{ appVersion or 'dev' }}</span>
         {% if isAdmin %}
         <a class="govuk-link govuk-link--no-visited-state" href="/admin/users">Admin</a>
         <a class="govuk-link govuk-link--no-visited-state" href="/admin/long-term-helping">Long-term help</a>
