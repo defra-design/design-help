@@ -17,7 +17,11 @@ Sign in - Defra Design Help
       <div class="govuk-error-summary__body">
         <ul class="govuk-list govuk-error-summary__list">
           <li>
+            {% if verifyEmailLink %}
+            {{ error }} <a class="govuk-link" href="{{ verifyEmailLink }}">Go to email verification</a>.
+            {% else %}
             <a href="#email">{{ error }}</a>
+            {% endif %}
           </li>
         </ul>
       </div>

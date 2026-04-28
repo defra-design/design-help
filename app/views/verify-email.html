@@ -24,6 +24,20 @@ Check your email - Defra Design Help
         </div>
         {% endif %}
 
+        {% if info %}
+        <div class="govuk-notification-banner govuk-notification-banner--success" role="status"
+            aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+            <div class="govuk-notification-banner__header">
+                <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">
+                    Success
+                </h2>
+            </div>
+            <div class="govuk-notification-banner__content">
+                <p class="govuk-notification-banner__heading">{{ info }}</p>
+            </div>
+        </div>
+        {% endif %}
+
         <h1 class="govuk-heading-xl">Check your email</h1>
 
         <p class="govuk-body">
@@ -53,9 +67,14 @@ Check your email - Defra Design Help
                     pattern="[0-9]*" autocomplete="one-time-code">
             </div>
 
-            <button class="govuk-button" data-module="govuk-button" type="submit">
-                Continue
-            </button>
+            <div class="govuk-button-group">
+                <button class="govuk-button" data-module="govuk-button" type="submit" name="action" value="verify">
+                    Continue
+                </button>
+                <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="submit" name="action" value="resend">
+                    Resend code
+                </button>
+            </div>
 
         </form>
 

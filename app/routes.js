@@ -185,13 +185,29 @@ function normaliseAvailabilityStatus(status) {
   return allowedAvailabilityStatuses.find((allowedStatus) => allowedStatus.toLowerCase() === String(status || '').trim().toLowerCase())
 }
 
-function verifyEmailPageLocals (req, { email, error = null } = {}) {
+function verifyEmailPageLocals (req, { email, error = null, info = null } = {}) {
   const showDevCode = process.env.NODE_ENV !== 'production' && Boolean(req.session && req.session.debugCode)
   return {
     email,
     error,
+    info,
     devVerificationCode: showDevCode ? req.session.debugCode : null
   }
+}
+
+async function sendVerificationCodeForEmail (req, email, verificationCode) {
+  if (isNotifyConfigured()) {
+    await sendVerificationEmail(email, verificationCode)
+    delete req.session.debugCode
+    return
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('notify_not_configured')
+  }
+  console.log('---------------------------------------------------')
+  console.log(`EMAIL SIMULATION: Verification code for ${email} is: ${verificationCode}`)
+  console.log('---------------------------------------------------')
+  req.session.debugCode = verificationCode
 }
 
 function getAdminSessionChanges(req) {
@@ -492,15 +508,23 @@ router.get('/login', (req, res) => {
     return res.redirect('/browse')
   }
 
-  res.render('login', { error: req.session.messages ? req.session.messages[0] : null })
+  const error = req.session.messages ? req.session.messages[0] : null
+  const lastLoginEmail = req.session.lastLoginEmail
+  const verifyEmailLink = (error === 'Please verify your email address.' && lastLoginEmail)
+    ? `/verify-email?email=${encodeURIComponent(lastLoginEmail)}`
+    : null
+  res.render('login', { error, verifyEmailLink })
   req.session.messages = [] // Clear messages
 })
 
-router.post('/login', passport.authenticate('local', {
-  successRedirect: '/browse',
-  failureRedirect: '/login',
-  failureMessage: true
-}))
+router.post('/login', (req, res, next) => {
+  req.session.lastLoginEmail = String(req.body.username || '').trim().toLowerCase()
+  passport.authenticate('local', {
+    successRedirect: '/browse',
+    failureRedirect: '/login',
+    failureMessage: true
+  })(req, res, next)
+})
 
 router.get('/logout', (req, res, next) => {
   req.logout((err) => {
@@ -565,66 +589,102 @@ router.post('/register', async (req, res) => {
       console.error('Profile stub creation skipped during registration', profileErr)
     }
 
-    if (isNotifyConfigured()) {
+    try {
+      await sendVerificationCodeForEmail(req, emailLower, verificationCode)
+    } catch (notifyErr) {
+      console.error('Notify send failed', notifyErr)
       try {
-        await sendVerificationEmail(emailLower, verificationCode)
-      } catch (notifyErr) {
-        console.error('Notify send failed', notifyErr)
-        try {
-          await db.query('DELETE FROM profiles WHERE user_id = $1', [userId])
-          await db.query('DELETE FROM users WHERE id = $1', [userId])
-        } catch (rollbackErr) {
-          console.error('Rollback after Notify failure failed', rollbackErr)
-        }
-        return res.render('register', {
-          error: 'We could not send the verification email. Check the address is valid and try again, or try again in a few minutes.'
-        })
+        await db.query('DELETE FROM profiles WHERE user_id = $1', [userId])
+        await db.query('DELETE FROM users WHERE id = $1', [userId])
+      } catch (rollbackErr) {
+        console.error('Rollback after Notify failure failed', rollbackErr)
       }
-    } else {
-      // Local / dev: no API keys; log and optionally show a dev-only code in the verify UI
-      console.log('---------------------------------------------------')
-      console.log(`EMAIL SIMULATION: Verification code for ${emailLower} is: ${verificationCode}`)
-      console.log('---------------------------------------------------')
+      return res.render('register', {
+        error: 'We could not send the verification email. Check the address is valid and try again, or try again in a few minutes.'
+      })
     }
 
     req.session.registrationEmail = emailLower
-    if (process.env.NODE_ENV !== 'production' && !isNotifyConfigured()) {
-      req.session.debugCode = verificationCode
-    } else {
-      delete req.session.debugCode
-    }
     res.redirect('/verify-email')
 
   } catch (err) {
     console.error(err)
     if (err.code === '23505') { // Unique violation
-      res.render('register', { error: 'Email already exists.' })
+      try {
+        const existingUserRes = await db.query('SELECT id, is_verified FROM users WHERE email = $1 LIMIT 1', [emailLower])
+        const existingUser = existingUserRes.rows[0]
+        if (existingUser && !existingUser.is_verified) {
+          if (process.env.NODE_ENV === 'production' && !isNotifyConfigured()) {
+            return res.render('register', {
+              error: 'Registration is not available because email sending is not configured on this service. Contact the team running Design help.'
+            })
+          }
+          const refreshedCode = crypto.randomInt(100000, 999999).toString()
+          const refreshedPasswordHash = await bcrypt.hash(password, 10)
+          await db.query(
+            'UPDATE users SET password_hash = $1, verification_code = $2 WHERE id = $3',
+            [refreshedPasswordHash, refreshedCode, existingUser.id]
+          )
+          await sendVerificationCodeForEmail(req, emailLower, refreshedCode)
+          req.session.registrationEmail = emailLower
+          return res.redirect('/verify-email')
+        }
+      } catch (recoverErr) {
+        console.error('Unverified account recovery failed', recoverErr)
+      }
+      return res.render('register', { error: 'Email already exists.' })
     } else {
-      const hint = (err && err.message) ? ` (${err.message})` : ''
-      res.render('register', { error: `An error occurred.${hint}` })
+      const safeError = process.env.NODE_ENV === 'production'
+        ? 'An error occurred.'
+        : `An error occurred.${(err && err.message) ? ` (${err.message})` : ''}`
+      return res.render('register', { error: safeError })
     }
   }
 })
 
 // Verification Routes
 router.get('/verify-email', (req, res) => {
+  const queryEmail = String(req.query.email || '').trim().toLowerCase()
+  if (queryEmail) {
+    req.session.registrationEmail = queryEmail
+  }
   res.render('verify-email', verifyEmailPageLocals(req, {
-    email: req.session.registrationEmail,
-    error: req.session.messages ? req.session.messages[0] : null
+    email: queryEmail || req.session.registrationEmail,
+    error: req.session.messages ? req.session.messages[0] : null,
+    info: req.session.verifyInfo || null
   }))
   req.session.messages = []
+  delete req.session.verifyInfo
 })
 
 router.post('/verify-email', async (req, res) => {
-  const { email, code } = req.body
+  const { code } = req.body
+  const action = String(req.body.action || 'verify').trim().toLowerCase()
+  const email = String(req.body.email || '').trim().toLowerCase()
 
   try {
+    if (!email) {
+      return res.render('verify-email', verifyEmailPageLocals(req, { email: '', error: 'Enter your email address to continue.' }))
+    }
     const resDb = await db.query('SELECT * FROM users WHERE email = $1', [email])
     if (resDb.rows.length === 0) {
       return res.render('verify-email', verifyEmailPageLocals(req, { email, error: 'User not found.' }))
     }
 
     const user = resDb.rows[0]
+
+    if (action === 'resend') {
+      if (user.is_verified) {
+        return res.render('verify-email', verifyEmailPageLocals(req, { email, error: 'This email is already verified. You can sign in.' }))
+      }
+      const refreshedCode = crypto.randomInt(100000, 999999).toString()
+      await db.query('UPDATE users SET verification_code = $1 WHERE id = $2', [refreshedCode, user.id])
+      await sendVerificationCodeForEmail(req, email, refreshedCode)
+      return res.render('verify-email', verifyEmailPageLocals(req, {
+        email,
+        info: 'We sent a new verification code.'
+      }))
+    }
 
     if (String(user.verification_code) === String(code).trim()) {
       await db.query('UPDATE users SET is_verified = TRUE, verification_code = NULL WHERE id = $1', [user.id])
