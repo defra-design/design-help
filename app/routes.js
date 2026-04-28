@@ -495,12 +495,17 @@ router.post('/register', async (req, res) => {
     )
     const userId = userRes.rows[0].id
 
-    // Create Profile Stub
-    const profileId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    await db.query(
-      'INSERT INTO profiles (id, user_id, name, availability_status) VALUES ($1, $2, $3, $4)',
-      [profileId, userId, name, 'Some capacity']
-    )
+    // Create profile stub when possible, but do not block account creation if
+    // older production schemas reject this lightweight insert.
+    try {
+      const profileId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `user-${userId}`
+      await db.query(
+        'INSERT INTO profiles (id, user_id, name, availability_status) VALUES ($1, $2, $3, $4)',
+        [profileId, userId, name, 'Some capacity']
+      )
+    } catch (profileErr) {
+      console.error('Profile stub creation skipped during registration', profileErr)
+    }
 
     if (isNotifyConfigured()) {
       try {
