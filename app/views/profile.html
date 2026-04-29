@@ -4,27 +4,30 @@
 
 {% block content %}
 
-<div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
-    
-    <p class="govuk-body">
+<div class="govuk-grid-row govuk-!-margin-bottom-7">
+  <div class="govuk-grid-column-full">
+    <p class="govuk-body govuk-!-margin-bottom-2">
       <a href="/browse" class="govuk-link govuk-back-link">Back to team members</a>
     </p>
 
-    <h1 class="govuk-heading-xl">
+    <h1 class="govuk-heading-xl govuk-!-margin-bottom-2">
       {{ member.name }}
     </h1>
     {% if not isAdmin and isOwnProfile %}
-    <p class="govuk-body">
+    <p class="govuk-body govuk-!-margin-bottom-0">
       <a class="govuk-button" data-module="govuk-button" href="/my-profile/edit">Edit my profile</a>
     </p>
     {% endif %}
+  </div>
+</div>
 
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
     {% if member.role %}
-      <p class="govuk-body-l">{{ member.role }}</p>
+    <p class="govuk-body-l profile-page__job-title">{{ member.role }}</p>
     {% endif %}
 
-    <dl class="govuk-summary-list" style="margin-top: 2em;">
+    <dl class="govuk-summary-list {% if member.role %}govuk-!-margin-top-6{% endif %}">
       {% if member.display_email %}
       <div class="govuk-summary-list__row">
         <dt class="govuk-summary-list__key">Email</dt>
@@ -97,29 +100,27 @@
     </p>
     {% endif %}
 
-    <div style="border-top: 2px solid #b1b4b6; padding-top: 2em; margin-top: 2em;">
-      <h2 class="govuk-heading-m">Get in touch</h2>
+  </div>
+
+  <div class="govuk-grid-column-one-third profile-page__contact-sidebar">
+    <aside class="profile-page__contact-aside" aria-labelledby="profile-get-in-touch">
+      <h2 id="profile-get-in-touch" class="govuk-heading-m govuk-!-margin-top-0">Get in touch</h2>
       <p class="govuk-body">
         {% if member.display_email %}
-        You can also email <a class="govuk-link" href="mailto:{{ member.display_email }}">{{ member.display_email }}</a> or reach out to {{ member.name.split(' ')[0] }} on Slack to arrange a time to chat.
+        Email <a class="govuk-link" href="mailto:{{ member.display_email }}">{{ member.display_email }}</a> or reach out to {{ member.name.split(' ')[0] }} on Slack to arrange a time to chat.
         {% else %}
-        Reach out to {{ member.name.split(' ')[0] }} on Slack or email to arrange a time to chat.
+        Reach out to {{ member.name.split(' ')[0] }} on Slack or by email to arrange a time to chat.
         {% endif %}
       </p>
-      <button class="govuk-button" data-module="govuk-button">
-        Send message
-      </button>
-    </div>
-
+      {% if member.display_email %}
+      <p class="govuk-body govuk-!-margin-bottom-0">
+        <a href="mailto:{{ member.display_email }}" class="govuk-button" data-module="govuk-button">
+          Send message
+        </a>
+      </p>
+      {% endif %}
+    </aside>
   </div>
 </div>
 
 {% endblock %}
-
-
-
-
-
-
-
-

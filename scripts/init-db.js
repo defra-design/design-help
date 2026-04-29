@@ -117,10 +117,19 @@ async function initDb() {
                         member.availability || 'Available',
                         contactEmail
                     ]);
-                } else if (contactEmail) {
+                } else {
                     await client.query(
-                        'UPDATE profiles SET contact_email = $1 WHERE id = $2',
-                        [contactEmail, member.id]
+                        `UPDATE profiles SET
+                          can_help_with = $1::text[],
+                          can_help_with_text = $2,
+                          contact_email = COALESCE($3, contact_email)
+                        WHERE id = $4`,
+                        [
+                            member.canHelpWith || [],
+                            member.canHelpWithText || null,
+                            contactEmail,
+                            member.id
+                        ]
                     );
                 }
                 if (contactEmail) {

@@ -9,3 +9,35 @@
 a[href*="clear-data"] {
   display: none !important;
 }
+
+/* Contact aside: left accent (inset-style) without top padding on large screens so “Get in touch” aligns with job title row */
+.profile-page__contact-aside {
+  border-left: 4px solid #b1b4b6;
+  padding-left: 15px;
+}
+
+@media (min-width: 48.0625em) {
+  /* Floated/flex siblings: keep sidebar anchored to top of the row beside job title */
+  .profile-page__contact-sidebar {
+    align-self: start;
+  }
+
+  .profile-page__contact-aside {
+    padding-top: 0;
+  }
+
+  .profile-page__job-title {
+    margin-top: 0;
+  }
+}
+
+/* Space above sidebar when profile columns stack on narrow screens */
+@media (max-width: 48.0625em) {
+  .profile-page__contact-sidebar {
+    margin-top: 2.5rem;
+  }
+
+  .profile-page__contact-aside {
+    padding-top: 15px;
+  }
+}

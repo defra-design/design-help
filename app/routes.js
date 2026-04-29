@@ -63,6 +63,15 @@ const adminProfileWizardSteps = ['details', 'about', 'can-help', 'development-go
 const codeReleaseVersion = String(appConfig.releaseVersion || '').trim() || 'dev'
 const localDemoAdminEmail = String(process.env.LOCAL_ADMIN_EMAIL || 'pete.smith@defra.gov.uk').trim().toLowerCase()
 const localDemoAdminPassword = String(process.env.LOCAL_ADMIN_PASSWORD || 'help')
+/** Matches homepage /browse shortcuts so seeded local demos return results for each link */
+const localBrowseShortcutTags = [
+  'Design crits',
+  'Prototyping question',
+  'Mural support',
+  'Figma support',
+  'Accessibility questions',
+  'Feedback on service design artefact'
+]
 
 db.query(`
   CREATE TABLE IF NOT EXISTS users (
@@ -137,11 +146,16 @@ async function ensureLocalDemoAdminAccount () {
         ? preferredProfileId
         : `pete-smith-admin-${userId}`
       await db.query(
-        `INSERT INTO profiles (id, user_id, name, role, location, experience, availability_status, contact_email)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [profileId, userId, 'Pete Smith', 'Design Manager', 'Bristol', '10+ years', 'Some capacity', localDemoAdminEmail]
+        `INSERT INTO profiles (id, user_id, name, role, location, experience, availability_status, contact_email, can_help_with)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text[])`,
+        [profileId, userId, 'Pete Smith', 'Design Manager', 'Bristol', '10+ years', 'Some capacity', localDemoAdminEmail, localBrowseShortcutTags]
       )
     }
+    await db.query(
+      `UPDATE profiles SET can_help_with = $1::text[] WHERE user_id = $2
+       AND (can_help_with IS NULL OR cardinality(can_help_with) = 0)`,
+      [localBrowseShortcutTags, userId]
+    )
   } catch (err) {
     console.error('Local demo admin seed failed', err)
   }
@@ -282,6 +296,18 @@ function getPreviousStep(step) {
 function getNextStep(step) {
   const idx = adminProfileWizardSteps.indexOf(step)
   return idx >= 0 && idx < adminProfileWizardSteps.length - 1 ? adminProfileWizardSteps[idx + 1] : null
+}
+
+/** Allow registration/sign-in for profile contact addresses added by admins */
+async function ensureApprovedEmailInDb (email) {
+  const e = String(email || '').trim().toLowerCase()
+  if (!e.endsWith('@defra.gov.uk')) {
+    return
+  }
+  await db.query(
+    'INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING',
+    [e]
+  )
 }
 
 async function getHelpingHelpees (helperProfileId) {
@@ -909,12 +935,14 @@ router.post('/admin/users/:id/edit', ensureAdmin, async (req, res) => {
   }
   const wordCount = (text) => (!text || !text.trim() ? 0 : text.trim().split(/\s+/).length)
   const {
-    name, projectTeam, deliveryGroup, role, availabilityStatus, location, experience, about, linkedinProfile, canHelpWithTags, canHelpWithText, developmentGoalsTags, developmentGoalsText
+    name, projectTeam, deliveryGroup, role, availabilityStatus, location, experience, about, linkedinProfile, canHelpWithTags, canHelpWithText, developmentGoalsTags, developmentGoalsText, contactEmail
   } = req.body
   const normalisedRole = normaliseAllowedRole(role)
   const normalisedAvailabilityStatus = normaliseAvailabilityStatus(availabilityStatus)
+  const contactEmailNorm = String(contactEmail || '').trim().toLowerCase()
   const profileModel = {
     ...req.body,
+    contact_email: contactEmailNorm || '',
     can_help_with: parseList(canHelpWithTags),
     development_goals: parseList(developmentGoalsTags),
     availability_status: availabilityStatus
@@ -943,18 +971,36 @@ router.post('/admin/users/:id/edit', ensureAdmin, async (req, res) => {
       error: 'Additional details must be 150 words or fewer for both "Can help with" and "Development goals".'
     })
   }
+  if (contactEmailNorm && !contactEmailNorm.endsWith('@defra.gov.uk')) {
+    return res.render('add-profile', {
+      success: false,
+      profile: profileModel,
+      isAdminMode: true,
+      isWizardMode: false,
+      formAction: `/admin/users/${req.params.id}/edit`,
+      formTitle: 'Edit team member profile',
+      adminReturnUrl: '/admin/users',
+      error: 'Defra email must be a valid @defra.gov.uk address (or leave blank).'
+    })
+  }
   try {
     await db.query(`
       UPDATE profiles SET
         name = $1, project_team = $2, delivery_group = $3, role = $4, location = $5,
         experience = $6, bio = $7, linkedin_profile = $8, can_help_with = $9, can_help_with_text = $10,
-        development_goals = $11, development_goals_text = $12, availability_status = $13
-      WHERE id = $14
+        development_goals = $11, development_goals_text = $12, availability_status = $13,
+        contact_email = $14
+      WHERE id = $15
     `, [
       name, projectTeam || null, deliveryGroup || null, normalisedRole, location,
       experience, about || null, linkedinProfile || null, parseList(canHelpWithTags), canHelpWithText || null,
-      parseList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus, req.params.id
+      parseList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus,
+      contactEmailNorm || null,
+      req.params.id
     ])
+    if (contactEmailNorm) {
+      await ensureApprovedEmailInDb(contactEmailNorm)
+    }
     trackAdminChange(req, 'edited', req.params.id)
     return res.redirect('/admin/users')
   } catch (err) {
@@ -1007,7 +1053,7 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
   }
 
   const {
-    name, projectTeam, deliveryGroup, role, availabilityStatus, location, experience, about, linkedinProfile, canHelpWithTags, canHelpWithText, developmentGoalsTags, developmentGoalsText
+    name, projectTeam, deliveryGroup, role, availabilityStatus, location, experience, about, linkedinProfile, canHelpWithTags, canHelpWithText, developmentGoalsTags, developmentGoalsText, contactEmail
   } = req.body
   const step = getWizardStep(req.body.step)
   const action = req.body.action
@@ -1027,6 +1073,10 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
   if (canHelpWithText !== undefined) updatedDraft.can_help_with_text = canHelpWithText
   if (developmentGoalsTags !== undefined) updatedDraft.development_goals = parseList(developmentGoalsTags)
   if (developmentGoalsText !== undefined) updatedDraft.development_goals_text = developmentGoalsText
+  if (contactEmail !== undefined) {
+    const trimmed = String(contactEmail || '').trim().toLowerCase()
+    updatedDraft.contact_email = trimmed || undefined
+  }
 
   if (action === 'previous') {
     req.session.adminProfileDraft = updatedDraft
@@ -1101,23 +1151,48 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
     })
   }
 
-  req.session.adminProfileDraft = updatedDraft
   const nextStep = getNextStep(step)
+
+  // Leaving step 1: Defra email is stored on the profile and mirrored to approved_emails so they can register
+  if (step === 'details' && nextStep) {
+    const ce = String(updatedDraft.contact_email || '').trim()
+    if (!ce.endsWith('@defra.gov.uk')) {
+      req.session.adminProfileDraft = updatedDraft
+      return res.render('add-profile', {
+        success: false,
+        isAdminMode: true,
+        isWizardMode: true,
+        wizardStep: step,
+        wizardStepIndex: adminProfileWizardSteps.indexOf(step) + 1,
+        wizardStepCount: adminProfileWizardSteps.length,
+        formAction: '/admin/add-profile',
+        formTitle: 'Add team member profile',
+        adminReturnUrl: '/admin/users',
+        error: 'Enter the team member\'s @defra.gov.uk email so they can register and appear on the approved list.',
+        profile: updatedDraft
+      })
+    }
+  }
+
+  req.session.adminProfileDraft = updatedDraft
   if (nextStep) {
     return res.redirect(`/admin/add-profile?step=${nextStep}`)
   }
 
   try {
+    const contactForProfile = String(updatedDraft.contact_email || '').trim()
     const profileId = `${updatedDraft.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Date.now()}`
     await db.query(`
       INSERT INTO profiles (
         id, user_id, name, project_team, delivery_group, role, location, experience, bio,
-        linkedin_profile, can_help_with, can_help_with_text, development_goals, development_goals_text, availability_status
-      ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        linkedin_profile, can_help_with, can_help_with_text, development_goals, development_goals_text, availability_status, contact_email
+      ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
     `, [
       profileId, updatedDraft.name, updatedDraft.project_team || null, updatedDraft.delivery_group || null, normaliseAllowedRole(updatedDraft.role), updatedDraft.location, updatedDraft.experience, updatedDraft.bio || null,
-      updatedDraft.linkedin_profile || null, updatedDraft.can_help_with, updatedDraft.can_help_with_text || null, updatedDraft.development_goals, updatedDraft.development_goals_text || null, normaliseAvailabilityStatus(updatedDraft.availability_status) || 'Some capacity'
+      updatedDraft.linkedin_profile || null, updatedDraft.can_help_with, updatedDraft.can_help_with_text || null, updatedDraft.development_goals, updatedDraft.development_goals_text || null, normaliseAvailabilityStatus(updatedDraft.availability_status) || 'Some capacity',
+      contactForProfile.endsWith('@defra.gov.uk') ? contactForProfile : null
     ])
+    await ensureApprovedEmailInDb(contactForProfile)
     req.session.adminProfileDraft = null
     trackAdminChange(req, 'added', profileId)
     return res.redirect('/admin/users')

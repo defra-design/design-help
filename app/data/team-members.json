@@ -11,10 +11,9 @@
     "bio": "I specialise in making complex services simple and accessible. I love helping others think through user journeys and interaction patterns.",
     "linkedinProfile": "https://www.linkedin.com/in/sarah-johnson-design",
     "canHelpWith": [
-      "Figma",
-      "Accessible design",
-      "Prototyping tool kit",
-      "Workshops"
+      "Design crits",
+      "Figma support",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "Happy to review prototypes and help teams make interaction patterns accessible.",
     "developmentGoals": [
@@ -37,6 +36,7 @@
     "bio": "I help teams communicate clearly with users. Happy to review content, run writing workshops, or talk through content strategy.",
     "linkedinProfile": "https://www.linkedin.com/in/james-chen-content",
     "canHelpWith": [
+      "Feedback on service design artefact",
       "Workshops",
       "Stakeholder management",
       "Value propositions"
@@ -65,7 +65,9 @@
       "Blueprints",
       "System thinking",
       "Stakeholder management",
-      "Workshops"
+      "Workshops",
+      "Design crits",
+      "Mural support"
     ],
     "canHelpWithText": "Can support teams to map complex journeys and align cross-functional stakeholders.",
     "developmentGoals": [
@@ -91,7 +93,8 @@
       "System thinking",
       "Business planning",
       "Stakeholder management",
-      "Value propositions"
+      "Value propositions",
+      "Design crits"
     ],
     "canHelpWithText": "Happy to coach on strategic framing and influencing senior stakeholders.",
     "developmentGoals": [
@@ -113,9 +116,9 @@
     "bio": "I love building prototypes and working with the GOV.UK Design System. Happy to pair on coding prototypes or reviewing interaction design.",
     "linkedinProfile": "",
     "canHelpWith": [
-      "Prototyping tool kit",
-      "Figma",
-      "Accessible design"
+      "Prototyping question",
+      "Figma support",
+      "Accessibility questions"
     ],
     "canHelpWithText": "Can pair on rapid prototyping and interaction pattern iteration.",
     "developmentGoals": [
@@ -138,9 +141,9 @@
     "bio": "I run user research across our services and love helping designers think about research. I can help plan studies, review discussion guides, or analyse findings.",
     "linkedinProfile": "https://www.linkedin.com/in/alex-thompson-uxr",
     "canHelpWith": [
+      "Accessibility questions",
       "Pre-discovery",
-      "Workshops",
-      "Accessible design"
+      "Workshops"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -188,6 +191,7 @@
     "bio": "Experienced across digital transformation and complex service environments.",
     "linkedinProfile": "",
     "canHelpWith": [
+      "Mural support",
       "Blueprints",
       "System thinking",
       "Workshops",
@@ -217,7 +221,10 @@
       "Figma",
       "Accessible design",
       "Design in agile",
-      "Coaching"
+      "Coaching",
+      "Design crits",
+      "Figma support",
+      "Accessibility questions"
     ],
     "canHelpWithText": "Happy to help with pattern reviews and sprint design rituals.",
     "developmentGoals": [
@@ -267,7 +274,9 @@
     "canHelpWith": [
       "Value propositions",
       "Workshops",
-      "Pre-discovery"
+      "Pre-discovery",
+      "Design crits",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -291,7 +300,9 @@
     "canHelpWith": [
       "Prototyping tool kit",
       "Figma",
-      "Github Copilot"
+      "Github Copilot",
+      "Prototyping question",
+      "Figma support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -315,7 +326,8 @@
     "canHelpWith": [
       "Research planning",
       "Accessible design",
-      "Service assessments"
+      "Service assessments",
+      "Accessibility questions"
     ],
     "canHelpWithText": "Can support teams through robust planning and evidence synthesis.",
     "developmentGoals": [
@@ -363,7 +375,8 @@
     "canHelpWith": [
       "Pre-discovery",
       "Workshops",
-      "Value propositions"
+      "Value propositions",
+      "Mural support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -387,7 +400,10 @@
     "canHelpWith": [
       "Accessible design",
       "Figma",
-      "Design in agile"
+      "Design in agile",
+      "Prototyping question",
+      "Figma support",
+      "Accessibility questions"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -411,7 +427,8 @@
     "canHelpWith": [
       "Value propositions",
       "Workshops",
-      "Coaching"
+      "Coaching",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -435,7 +452,8 @@
     "canHelpWith": [
       "Service blueprinting",
       "System thinking",
-      "Service assessments"
+      "Service assessments",
+      "Mural support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -457,9 +475,9 @@
     "bio": "Early-career designer with strong prototyping and visual communication skills.",
     "linkedinProfile": "",
     "canHelpWith": [
-      "Figma",
-      "Prototyping tool kit",
-      "Mural"
+      "Mural support",
+      "Figma support",
+      "Prototyping question"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -483,7 +501,8 @@
     "canHelpWith": [
       "Research planning",
       "Accessible design",
-      "Pre-discovery"
+      "Pre-discovery",
+      "Accessibility questions"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -507,7 +526,8 @@
     "canHelpWith": [
       "Workshops",
       "Stakeholder management",
-      "Value propositions"
+      "Value propositions",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -555,7 +575,9 @@
     "canHelpWith": [
       "Value propositions",
       "Design in agile",
-      "Workshops"
+      "Workshops",
+      "Accessibility questions",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -579,7 +601,9 @@
     "canHelpWith": [
       "Accessible design",
       "Figma",
-      "Prototyping tool kit"
+      "Prototyping tool kit",
+      "Prototyping question",
+      "Figma support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -603,7 +627,8 @@
     "canHelpWith": [
       "System thinking",
       "Service blueprinting",
-      "Workshops"
+      "Workshops",
+      "Design crits"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -627,7 +652,9 @@
     "canHelpWith": [
       "Figma",
       "Prototyping tool kit",
-      "Design in agile"
+      "Design in agile",
+      "Design crits",
+      "Prototyping question"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -651,7 +678,8 @@
     "canHelpWith": [
       "Research planning",
       "Coaching",
-      "Service assessments"
+      "Service assessments",
+      "Mural support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -675,7 +703,8 @@
     "canHelpWith": [
       "Stakeholder management",
       "System thinking",
-      "Workshops"
+      "Workshops",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -724,7 +753,8 @@
     "canHelpWith": [
       "Value propositions",
       "Design in agile",
-      "Accessible design"
+      "Accessible design",
+      "Accessibility questions"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -748,7 +778,9 @@
     "canHelpWith": [
       "Figma",
       "Accessible design",
-      "Design in agile"
+      "Design in agile",
+      "Prototyping question",
+      "Figma support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -772,7 +804,8 @@
     "canHelpWith": [
       "Service blueprinting",
       "System thinking",
-      "Service assessments"
+      "Service assessments",
+      "Mural support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -796,7 +829,8 @@
     "canHelpWith": [
       "Prototyping tool kit",
       "Figma",
-      "Github Copilot"
+      "Github Copilot",
+      "Prototyping question"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -844,7 +878,8 @@
     "canHelpWith": [
       "Stakeholder management",
       "Value propositions",
-      "Workshops"
+      "Workshops",
+      "Feedback on service design artefact"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -892,7 +927,8 @@
     "canHelpWith": [
       "Value propositions",
       "Accessible design",
-      "Workshops"
+      "Workshops",
+      "Accessibility questions"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -916,7 +952,8 @@
     "canHelpWith": [
       "Figma",
       "Design in agile",
-      "Accessible design"
+      "Accessible design",
+      "Figma support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [
@@ -940,7 +977,8 @@
     "canHelpWith": [
       "Service blueprinting",
       "System thinking",
-      "Workshops"
+      "Workshops",
+      "Mural support"
     ],
     "canHelpWithText": "",
     "developmentGoals": [

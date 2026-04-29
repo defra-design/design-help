@@ -132,6 +132,21 @@
         <input class="govuk-input govuk-input--width-10" id="experience" name="experience" type="text"
           aria-describedby="experience-hint" value="{{ profile.experience if profile else '' }}" required>
       </div>
+
+      {% if isAdminMode %}
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="contactEmail">
+          Defra email address {% if isWizardMode %}<span class="govuk-visually-hidden">(required)</span>{% endif %}
+        </label>
+        <div id="contactEmail-hint" class="govuk-hint">
+          When you finish this wizard, we add this address to the approved list so they can register at the same email and sign in.
+        </div>
+        <input class="govuk-input govuk-!-width-two-thirds" id="contactEmail" name="contactEmail" type="email"
+          autocomplete="email" spellcheck="false" inputmode="email" aria-describedby="contactEmail-hint"
+          value="{{ profile.contact_email if profile and profile.contact_email else '' }}"
+          {% if isWizardMode %}required{% endif %}>
+      </div>
+      {% endif %}
       {% endif %}
 
       {% if not isWizardMode or wizardStep == "can-help" %}
