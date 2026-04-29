@@ -1257,8 +1257,6 @@ router.get('/browse', async (req, res) => {
   const sort = req.query.sort || 'a-z'
   let filteredMembers = []
   let groupedMembers = []
-  let matchedHelpers = []
-  let userDevelopmentGoals = []
   const getRoleGroup = (role) => {
     const normalisedRole = String(role || '').toLowerCase()
     if (normalisedRole.includes('accessibility')) {
@@ -1277,33 +1275,6 @@ router.get('/browse', async (req, res) => {
   }
 
   try {
-    if (req.user && req.user.id) {
-      const myProfileRes = await db.query('SELECT id, development_goals FROM profiles WHERE user_id = $1 LIMIT 1', [req.user.id])
-      const myProfile = myProfileRes.rows[0]
-      if (myProfile) {
-        const myGoals = sanitiseTagArray(myProfile.development_goals)
-        if (myGoals.length > 0) {
-          userDevelopmentGoals = myGoals
-        const helperRes = await db.query(`
-          SELECT * FROM profiles
-          WHERE id != $1
-            AND can_help_with && $2::text[]
-          ORDER BY name ASC
-          LIMIT 12
-        `, [myProfile.id, myGoals])
-
-        matchedHelpers = helperRes.rows.map((member) => {
-          const helperTags = sanitiseTagArray(member.can_help_with)
-          const sharedTags = helperTags.filter((tag) => myGoals.includes(tag))
-          return {
-            ...member,
-            shared_tags: sharedTags
-          }
-        })
-        }
-      }
-    }
-
     if (filter) {
       // Simple search query matching JSON logic
       const query = `
@@ -1311,7 +1282,6 @@ router.get('/browse', async (req, res) => {
          WHERE 
            array_to_string(can_help_with, ' ') ILIKE $1 OR
            COALESCE(can_help_with_text, '') ILIKE $1 OR
-           array_to_string(development_goals, ' ') ILIKE $1 OR
            COALESCE(development_goals_text, '') ILIKE $1 OR
            role ILIKE $1 OR
            name ILIKE $1
@@ -1357,8 +1327,6 @@ router.get('/browse', async (req, res) => {
   res.render('browse', {
     filteredMembers: filteredMembers,
     groupedMembers: groupedMembers,
-    matchedHelpers: matchedHelpers,
-    userDevelopmentGoals: userDevelopmentGoals,
     filterText: filter,
     sort: sort
   })

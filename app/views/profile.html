@@ -78,16 +78,8 @@
     <p class="govuk-body">{{ member.can_help_with_text }}</p>
     {% endif %}
 
-    {% if member.development_goals and member.development_goals.length %}
-    <h2 class="govuk-heading-m">Development goals</h2>
-    <ul class="govuk-list govuk-list--bullet">
-      {% for goal in member.development_goals %}
-      <li>{{ goal }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-
     {% if member.development_goals_text %}
+    <h2 class="govuk-heading-m">What I would like help with</h2>
     <p class="govuk-body">{{ member.development_goals_text }}</p>
     {% endif %}
 

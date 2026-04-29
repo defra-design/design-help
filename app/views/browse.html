@@ -25,7 +25,7 @@
     <form method="get" action="/browse" class="govuk-!-margin-bottom-4">
       <div class="govuk-form-group">
         <label class="govuk-label" for="browse-filter">Search (change your filter)</label>
-        <div class="govuk-hint" id="browse-filter-hint">Matches “can help with” tags, extra profile text, development goals, job title, or name.</div>
+        <div class="govuk-hint" id="browse-filter-hint">Matches “can help with” tags, extra profile text, role and name.</div>
         <input class="govuk-input" id="browse-filter" name="filter" type="search" value="{{ filterText or '' }}"
           aria-describedby="browse-filter-hint" autocomplete="off"
           placeholder="e.g. coaching, Figma, accessibility">
@@ -47,26 +47,6 @@
         {% endif %}
       </div>
     </form>
-
-    {% if matchedHelpers and matchedHelpers.length > 0 %}
-    <section class="govuk-!-margin-bottom-8">
-      <h2 class="govuk-heading-l">People who can help with your development goals</h2>
-      <p class="govuk-body">
-        Based on your goals: {{ userDevelopmentGoals | join(', ') }}
-      </p>
-      <ul class="govuk-list govuk-list--bullet">
-        {% for helper in matchedHelpers %}
-        <li>
-          <a class="govuk-link govuk-link--no-visited-state" href="/profile/{{ helper.id }}">{{ helper.name }}</a>
-          {% if helper.role %} — {{ helper.role }}{% endif %}
-          {% if helper.shared_tags and helper.shared_tags.length %}
-            (matches: {{ helper.shared_tags | join(', ') }})
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    </section>
-    {% endif %}
 
     {% if filteredMembers.length > 0 %}
       {% if sort == "profession" %}

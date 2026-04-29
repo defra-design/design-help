@@ -5,26 +5,12 @@
 {% block content %}
 
 {% set availableTags = [
-  "Prototyping tool kit",
-  "Figma",
-  "Blueprints",
-  "System thinking",
-  "Stakeholder management",
-  "Business planning",
-  "Workshops",
-  "Value propositions",
-  "Accessible design",
-  "Sustainable design",
-  "Pre-discovery",
-  "Mural",
-  "AI prompts",
-  "Github Copilot",
-  "AI tooling",
-  "Service blueprinting",
-  "Research planning",
-  "Design in agile",
-  "Service assessments",
-  "Coaching"
+  "Design crits",
+  "Prototyping question",
+  "Mural support",
+  "Figma support",
+  "Accessibility questions",
+  "Feedback on service design artefact"
 ] %}
 
 <div class="govuk-grid-row">
@@ -175,24 +161,8 @@
 
       {% if not isWizardMode or wizardStep == "development-goals" %}
       <div class="govuk-form-group">
-        <label class="govuk-label govuk-label--m" for="developmentGoalsTags">Development goals tags</label>
-        <div id="developmentGoalsTags-hint" class="govuk-hint">Select all that apply</div>
-        <div class="govuk-checkboxes" data-module="govuk-checkboxes" aria-describedby="developmentGoalsTags-hint">
-          {% for tag in availableTags %}
-          <div class="govuk-checkboxes__item">
-            <input class="govuk-checkboxes__input" id="developmentGoalsTag-{{ loop.index }}" name="developmentGoalsTags" type="checkbox" value="{{ tag }}"
-              {{ "checked" if profile and profile.development_goals and (tag in profile.development_goals) else "" }}>
-            <label class="govuk-label govuk-checkboxes__label" for="developmentGoalsTag-{{ loop.index }}">
-              {{ tag }}
-            </label>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="govuk-form-group">
-        <label class="govuk-label govuk-label--m" for="developmentGoalsText">Development goals (free text)</label>
-        <div id="developmentGoalsText-hint" class="govuk-hint">Optional additional detail, up to 150 words</div>
+        <label class="govuk-label govuk-label--m" for="developmentGoalsText">What I would like help with (free text)</label>
+        <div id="developmentGoalsText-hint" class="govuk-hint">Describe longer-term development support you are looking for (up to 150 words)</div>
         <textarea class="govuk-textarea" id="developmentGoalsText" name="developmentGoalsText" rows="4"
           aria-describedby="developmentGoalsText-hint">{{ profile.development_goals_text if profile else '' }}</textarea>
       </div>
