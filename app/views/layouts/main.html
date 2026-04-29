@@ -7,11 +7,6 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 {% block header %}
 
 {{ govukHeader() }}
-<div class="govuk-width-container">
-  <p class="govuk-body-s govuk-!-margin-top-2 govuk-!-margin-bottom-2">
-    Version: {{ appVersion or 'dev' }}
-  </p>
-</div>
 {% if user %}
 <section class="govuk-service-navigation" aria-label="Menu">
   <div class="govuk-width-container">
@@ -45,4 +40,14 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 </section>
 {% endif %}
 
+{% endblock %}
+
+{% block footer %}
+<div class="govuk-width-container">
+  <p class="govuk-body-s govuk-!-margin-top-4 govuk-!-margin-bottom-2">
+    Version: {{ appVersion or 'dev' }} |
+    <a class="govuk-link govuk-link--no-visited-state" href="/about">About this app</a>
+  </p>
+</div>
+{{ govukFooter() }}
 {% endblock %}

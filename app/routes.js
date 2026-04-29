@@ -619,6 +619,10 @@ router.get('/register', (req, res) => {
   res.render('register')
 })
 
+router.get('/about', (req, res) => {
+  res.render('about')
+})
+
 router.post('/register', async (req, res) => {
   const { name, username, password } = req.body
   const emailLower = String(username || '').trim().toLowerCase()

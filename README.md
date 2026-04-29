@@ -46,6 +46,7 @@ The app is served at [http://localhost:3000](http://localhost:3000) by default.
 | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Heroku Postgres, config vars, one-off `init-db` and schema steps |
 | [GOVUK_NOTIFY_GUIDE.md](GOVUK_NOTIFY_GUIDE.md) | Notify template, API key, and how your code will send verification emails |
 | [TECHNICAL_OVERVIEW.md](TECHNICAL_OVERVIEW.md) | Plain-English view of how the app, database, and security fit together |
+| [USER_NEED_CONTEXT.md](USER_NEED_CONTEXT.md) | Product intent, user need, and context for why this app is being used |
 | [USER_GUIDE.md](USER_GUIDE.md) | End-user oriented notes where applicable |
 | [HEROKU_DEPLOYMENT.md](HEROKU_DEPLOYMENT.md) | **Legacy / needs refresh**—do not follow it as the main guide until it is updated to match Postgres + app auth; use **ROADMAP.md** and **DEPLOYMENT_GUIDE.md** instead |
 
