@@ -68,6 +68,10 @@
     <form method="post" action="{{ formAction or '/add-profile' }}">
       {% if isWizardMode %}
       <input type="hidden" name="step" value="{{ wizardStep }}">
+      {% if isAdminMode and wizardStep != "details" %}
+      {# Full wizard draft so later steps post back contact_email etc. without relying only on Postgres session snapshots #}
+      <input type="hidden" name="adminWizardDraftB64" value="{{ adminWizardDraftB64 }}">
+      {% endif %}
       {% endif %}
 
       {% if not isWizardMode or wizardStep == "details" %}

@@ -298,6 +298,26 @@ function getNextStep(step) {
   return idx >= 0 && idx < adminProfileWizardSteps.length - 1 ? adminProfileWizardSteps[idx + 1] : null
 }
 
+/** Carry wizard drafts across POSTs without relying solely on Postgres session snapshots (fixes lost carry on Heroku mid-wizard). */
+function encodeWizardDraftCarrier (draft) {
+  try {
+    return Buffer.from(JSON.stringify(draft)).toString('base64')
+  } catch (_) {
+    return ''
+  }
+}
+
+function decodeWizardDraftCarrier (raw) {
+  const s = String(raw || '').trim()
+  if (!s) return null
+  if (s.length > 256000) return null
+  try {
+    return JSON.parse(Buffer.from(s, 'base64').toString('utf8'))
+  } catch (_) {
+    return null
+  }
+}
+
 /** Allow registration/sign-in for profile contact addresses added by admins */
 async function ensureApprovedEmailInDb (email) {
   const e = String(email || '').trim().toLowerCase()
@@ -308,6 +328,52 @@ async function ensureApprovedEmailInDb (email) {
     'INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING',
     [e]
   )
+}
+
+/** Atomically approve email + insert profile created by admin wizard (registration depends on approval row existing). */
+async function insertAdminWizardProfileTxn (draft, profileId) {
+  const contactForProfile = String(draft.contact_email || '').trim().toLowerCase()
+  if (!contactForProfile.endsWith('@defra.gov.uk')) {
+    throw new Error('wizard_bad_contact_email')
+  }
+  const client = await db.pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query(
+      'INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING',
+      [contactForProfile]
+    )
+    await client.query(`
+      INSERT INTO profiles (
+        id, user_id, name, project_team, delivery_group, role, location, experience, bio,
+        linkedin_profile, can_help_with, can_help_with_text, development_goals, development_goals_text, availability_status, contact_email
+      ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    `, [
+      profileId,
+      draft.name,
+      draft.project_team || null,
+      draft.delivery_group || null,
+      normaliseAllowedRole(draft.role),
+      draft.location,
+      draft.experience,
+      draft.bio || null,
+      draft.linkedin_profile || null,
+      sanitiseTagArray(draft.can_help_with || []),
+      draft.can_help_with_text || null,
+      sanitiseTagArray(draft.development_goals || []),
+      draft.development_goals_text || null,
+      normaliseAvailabilityStatus(draft.availability_status) || 'Some capacity',
+      contactForProfile
+    ])
+    await client.query('COMMIT')
+  } catch (e) {
+    try {
+      await client.query('ROLLBACK')
+    } catch (_) { /* noop */ }
+    throw e
+  } finally {
+    client.release()
+  }
 }
 
 async function getHelpingHelpees (helperProfileId) {
@@ -1019,8 +1085,12 @@ router.post('/admin/users/:id/edit', ensureAdmin, async (req, res) => {
 })
 
 router.get('/admin/add-profile', ensureAdmin, (req, res) => {
+  if (String(req.query.new || '') === '1') {
+    delete req.session.adminProfileDraft
+  }
   const wizardStep = getWizardStep(req.query.step)
   const draft = req.session.adminProfileDraft || {}
+  const adminWizardDraftB64 = encodeWizardDraftCarrier(draft)
   res.render('add-profile', {
     success: false,
     profile: draft,
@@ -1031,7 +1101,8 @@ router.get('/admin/add-profile', ensureAdmin, (req, res) => {
     wizardStepCount: adminProfileWizardSteps.length,
     formAction: '/admin/add-profile',
     formTitle: 'Add team member profile',
-    adminReturnUrl: '/admin/users'
+    adminReturnUrl: '/admin/users',
+    adminWizardDraftB64
   })
 })
 
@@ -1053,19 +1124,27 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
   }
 
   const {
-    name, projectTeam, deliveryGroup, role, availabilityStatus, location, experience, about, linkedinProfile, canHelpWithTags, canHelpWithText, developmentGoalsTags, developmentGoalsText, contactEmail
+    name, projectTeam, deliveryGroup, role, availabilityStatus, location, experience, about, linkedinProfile, canHelpWithTags, canHelpWithText, developmentGoalsTags, developmentGoalsText, contactEmail,
+    adminWizardDraftB64: postedWizardCarrier
   } = req.body
   const step = getWizardStep(req.body.step)
   const action = req.body.action
-  const normalisedRole = normaliseAllowedRole(role)
-  const normalisedAvailabilityStatus = normaliseAvailabilityStatus(availabilityStatus)
-  const updatedDraft = { ...(req.session.adminProfileDraft || {}) }
+  const decodedCarrier = decodeWizardDraftCarrier(postedWizardCarrier)
+  const updatedDraft = {
+    ...(req.session.adminProfileDraft || {}),
+    ...(decodedCarrier || {})
+  }
   if (name !== undefined) updatedDraft.name = name
   if (projectTeam !== undefined) updatedDraft.project_team = projectTeam
   if (deliveryGroup !== undefined) updatedDraft.delivery_group = deliveryGroup
-  if (role !== undefined) updatedDraft.role = normalisedRole || role
+  if (role !== undefined) {
+    const nr = normaliseAllowedRole(role)
+    updatedDraft.role = nr || role
+  }
   if (location !== undefined) updatedDraft.location = location
-  if (availabilityStatus !== undefined) updatedDraft.availability_status = normalisedAvailabilityStatus || availabilityStatus
+  if (availabilityStatus !== undefined) {
+    updatedDraft.availability_status = normaliseAvailabilityStatus(availabilityStatus) || availabilityStatus
+  }
   if (experience !== undefined) updatedDraft.experience = experience
   if (about !== undefined) updatedDraft.bio = about
   if (linkedinProfile !== undefined) updatedDraft.linkedin_profile = linkedinProfile
@@ -1075,8 +1154,12 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
   if (developmentGoalsText !== undefined) updatedDraft.development_goals_text = developmentGoalsText
   if (contactEmail !== undefined) {
     const trimmed = String(contactEmail || '').trim().toLowerCase()
-    updatedDraft.contact_email = trimmed || undefined
+    if (trimmed) {
+      updatedDraft.contact_email = trimmed
+    }
   }
+  const normalisedRoleForStep = normaliseAllowedRole(updatedDraft.role)
+  const normalisedAvailabilityForStep = normaliseAvailabilityStatus(updatedDraft.availability_status)
 
   if (action === 'previous') {
     req.session.adminProfileDraft = updatedDraft
@@ -1084,8 +1167,8 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
     return res.redirect(`/admin/add-profile?step=${prev}`)
   }
 
-  const canHelpWithTextWords = wordCount(canHelpWithText)
-  const developmentGoalsTextWords = wordCount(developmentGoalsText)
+  const canHelpWithTextWords = wordCount(String(updatedDraft.can_help_with_text || ''))
+  const developmentGoalsTextWords = wordCount(String(updatedDraft.development_goals_text || ''))
   if ((step === 'can-help' || step === 'development-goals') && (canHelpWithTextWords > 150 || developmentGoalsTextWords > 150)) {
     req.session.adminProfileDraft = updatedDraft
     return res.render('add-profile', {
@@ -1098,11 +1181,12 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
       formAction: '/admin/add-profile',
       formTitle: 'Add team member profile',
       adminReturnUrl: '/admin/users',
+      adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
       error: 'Additional details must be 150 words or fewer for both "Can help with" and "Development goals".',
       profile: updatedDraft
     })
   }
-  if (step === 'details' && !normalisedRole) {
+  if (step === 'details' && !normalisedRoleForStep) {
     req.session.adminProfileDraft = updatedDraft
     return res.render('add-profile', {
       success: false,
@@ -1114,11 +1198,12 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
       formAction: '/admin/add-profile',
       formTitle: 'Add team member profile',
       adminReturnUrl: '/admin/users',
+      adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
       error: 'Select a valid GDaD job title from the list.',
       profile: updatedDraft
     })
   }
-  if (step === 'details' && !normalisedAvailabilityStatus) {
+  if (step === 'details' && !normalisedAvailabilityForStep) {
     req.session.adminProfileDraft = updatedDraft
     return res.render('add-profile', {
       success: false,
@@ -1130,11 +1215,12 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
       formAction: '/admin/add-profile',
       formTitle: 'Add team member profile',
       adminReturnUrl: '/admin/users',
+      adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
       error: 'Select a valid availability status from the list.',
       profile: updatedDraft
     })
   }
-  if (step === 'details' && (!name || !location || !experience)) {
+  if (step === 'details' && (!updatedDraft.name || !updatedDraft.location || !updatedDraft.experience)) {
     req.session.adminProfileDraft = updatedDraft
     return res.render('add-profile', {
       success: false,
@@ -1146,6 +1232,7 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
       formAction: '/admin/add-profile',
       formTitle: 'Add team member profile',
       adminReturnUrl: '/admin/users',
+      adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
       error: 'Name, job title, location and experience are required.',
       profile: updatedDraft
     })
@@ -1168,6 +1255,7 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
         formAction: '/admin/add-profile',
         formTitle: 'Add team member profile',
         adminReturnUrl: '/admin/users',
+        adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
         error: 'Enter the team member\'s @defra.gov.uk email so they can register and appear on the approved list.',
         profile: updatedDraft
       })
@@ -1180,24 +1268,32 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
   }
 
   try {
-    const contactForProfile = String(updatedDraft.contact_email || '').trim()
+    const ce = String(updatedDraft.contact_email || '').trim()
+    if (!ce.endsWith('@defra.gov.uk')) {
+      req.session.adminProfileDraft = updatedDraft
+      return res.render('add-profile', {
+        success: false,
+        isAdminMode: true,
+        isWizardMode: true,
+        wizardStep: step,
+        wizardStepIndex: adminProfileWizardSteps.indexOf(step) + 1,
+        wizardStepCount: adminProfileWizardSteps.length,
+        formAction: '/admin/add-profile',
+        formTitle: 'Add team member profile',
+        adminReturnUrl: '/admin/users',
+        adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
+        error: 'Defra email is missing or invalid in the wizard state. Start again from step 1 and include their @defra.gov.uk email.',
+        profile: updatedDraft
+      })
+    }
     const profileId = `${updatedDraft.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Date.now()}`
-    await db.query(`
-      INSERT INTO profiles (
-        id, user_id, name, project_team, delivery_group, role, location, experience, bio,
-        linkedin_profile, can_help_with, can_help_with_text, development_goals, development_goals_text, availability_status, contact_email
-      ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-    `, [
-      profileId, updatedDraft.name, updatedDraft.project_team || null, updatedDraft.delivery_group || null, normaliseAllowedRole(updatedDraft.role), updatedDraft.location, updatedDraft.experience, updatedDraft.bio || null,
-      updatedDraft.linkedin_profile || null, updatedDraft.can_help_with, updatedDraft.can_help_with_text || null, updatedDraft.development_goals, updatedDraft.development_goals_text || null, normaliseAvailabilityStatus(updatedDraft.availability_status) || 'Some capacity',
-      contactForProfile.endsWith('@defra.gov.uk') ? contactForProfile : null
-    ])
-    await ensureApprovedEmailInDb(contactForProfile)
+    await insertAdminWizardProfileTxn(updatedDraft, profileId)
     req.session.adminProfileDraft = null
     trackAdminChange(req, 'added', profileId)
     return res.redirect('/admin/users')
   } catch (err) {
     console.error(err)
+    req.session.adminProfileDraft = updatedDraft
     return res.render('add-profile', {
       success: false,
       isAdminMode: true,
@@ -1208,7 +1304,8 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
       formAction: '/admin/add-profile',
       formTitle: 'Add team member profile',
       adminReturnUrl: '/admin/users',
-      error: 'Error saving profile',
+      adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
+      error: process.env.NODE_ENV === 'production' ? 'Error saving profile' : `Error saving profile (${err.message || err})`,
       profile: updatedDraft
     })
   }
