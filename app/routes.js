@@ -14,7 +14,7 @@ const bcrypt = require('bcrypt')
 const db = require('./db')
 const { sendVerificationEmail, isNotifyConfigured } = require('./notify')
 const crypto = require('crypto')
-const authBypassEnabled = process.env.NODE_ENV !== 'production' && process.env.AUTH_BYPASS !== 'false'
+const authBypassEnabled = process.env.NODE_ENV !== 'production' && process.env.AUTH_BYPASS === 'true'
 const authBypassUser = {
   id: Number(process.env.AUTH_BYPASS_USER_ID || 16),
   email: process.env.AUTH_BYPASS_EMAIL || 'Pete@defra.gov.uk',
@@ -61,6 +61,8 @@ const allowedRoles = [
 const allowedAvailabilityStatuses = ['Busy', 'Some capacity', 'Free to help']
 const adminProfileWizardSteps = ['details', 'about', 'can-help', 'development-goals']
 const codeReleaseVersion = String(appConfig.releaseVersion || '').trim() || 'dev'
+const localDemoAdminEmail = String(process.env.LOCAL_ADMIN_EMAIL || 'pete.smith@defra.gov.uk').trim().toLowerCase()
+const localDemoAdminPassword = String(process.env.LOCAL_ADMIN_PASSWORD || 'help')
 
 db.query(`
   CREATE TABLE IF NOT EXISTS users (
@@ -102,6 +104,50 @@ db.query(`
 `).catch((err) => {
   console.error('Profiles table setup failed', err)
 })
+
+async function ensureLocalDemoAdminAccount () {
+  if (process.env.NODE_ENV === 'production') {
+    return
+  }
+  try {
+    const passwordHash = await bcrypt.hash(localDemoAdminPassword, 10)
+    let userId = null
+    const existingUser = await db.query('SELECT id FROM users WHERE email = $1 LIMIT 1', [localDemoAdminEmail])
+    if (existingUser.rows.length > 0) {
+      userId = existingUser.rows[0].id
+      await db.query(
+        'UPDATE users SET password_hash = $1, is_verified = TRUE, verification_code = NULL WHERE id = $2',
+        [passwordHash, userId]
+      )
+    } else {
+      const created = await db.query(
+        'INSERT INTO users (email, password_hash, is_verified, verification_code) VALUES ($1, $2, TRUE, NULL) RETURNING id',
+        [localDemoAdminEmail, passwordHash]
+      )
+      userId = created.rows[0].id
+    }
+
+    await db.query('INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING', [localDemoAdminEmail])
+
+    const existingProfile = await db.query('SELECT id FROM profiles WHERE user_id = $1 LIMIT 1', [userId])
+    if (existingProfile.rows.length === 0) {
+      const preferredProfileId = 'pete-smith-admin'
+      const existingId = await db.query('SELECT user_id FROM profiles WHERE id = $1 LIMIT 1', [preferredProfileId])
+      const profileId = (existingId.rows.length === 0 || Number(existingId.rows[0].user_id) === Number(userId))
+        ? preferredProfileId
+        : `pete-smith-admin-${userId}`
+      await db.query(
+        `INSERT INTO profiles (id, user_id, name, role, location, experience, availability_status, contact_email)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [profileId, userId, 'Pete Smith', 'Design Manager', 'Bristol', '10+ years', 'Some capacity', localDemoAdminEmail]
+      )
+    }
+  } catch (err) {
+    console.error('Local demo admin seed failed', err)
+  }
+}
+
+ensureLocalDemoAdminAccount()
 
 // Keep profile schema aligned for local iteration.
 db.query(`
@@ -263,21 +309,57 @@ function parseHelpeeProfileIds (body) {
 }
 
 function parseTagList (raw) {
-  if (!raw) {
+  const items = !raw
+    ? []
+    : (Array.isArray(raw)
+        ? raw.map((item) => item && item.trim())
+        : String(raw).split(',').map((item) => item.trim()))
+  return items.filter((item) => item && item !== '_unchecked')
+}
+
+function sanitiseTagArray (raw) {
+  if (raw == null || raw === '') {
     return []
   }
   if (Array.isArray(raw)) {
-    return raw.map((item) => item && item.trim()).filter(Boolean)
+    return raw
+      .map((item) => String(item || '').trim())
+      .filter((item) => item && item !== '_unchecked')
   }
-  return String(raw).split(',').map((item) => item.trim()).filter(Boolean)
+  if (typeof raw === 'string') {
+    const s = raw.trim()
+    if (s.startsWith('[') && s.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(s)
+        return sanitiseTagArray(parsed)
+      } catch (_) {
+        /* fall through */
+      }
+    }
+    if (s.startsWith('{') && s.endsWith('}')) {
+      const inner = s.slice(1, -1)
+      if (inner.trim() === '') {
+        return []
+      }
+      return inner.split(',').map((item) => {
+        let chunk = item.trim()
+        if (chunk.startsWith('"') && chunk.endsWith('"')) {
+          chunk = chunk.slice(1, -1).replace(/""/g, '"')
+        }
+        return chunk.trim()
+      }).filter((item) => item && item !== '_unchecked')
+    }
+    return parseTagList(s)
+  }
+  return []
 }
 
 async function getMyProfileFormContext (req) {
   const { name, canHelpWithTags, developmentGoalsTags } = req.body
   const profile = {
     ...req.body,
-    can_help_with: Array.isArray(canHelpWithTags) ? canHelpWithTags.map((t) => t && t.trim()).filter(Boolean) : parseTagList(canHelpWithTags),
-    development_goals: Array.isArray(developmentGoalsTags) ? developmentGoalsTags.map((t) => t && t.trim()).filter(Boolean) : parseTagList(developmentGoalsTags)
+    can_help_with: Array.isArray(canHelpWithTags) ? sanitiseTagArray(canHelpWithTags) : parseTagList(canHelpWithTags),
+    development_goals: Array.isArray(developmentGoalsTags) ? sanitiseTagArray(developmentGoalsTags) : parseTagList(developmentGoalsTags)
   }
   return { profile }
 }
@@ -345,8 +427,8 @@ async function getProfileForUser(userId) {
   )
   const profile = resDb.rows[0] || null
   if (profile) {
-    profile.can_help_with = profile.can_help_with || []
-    profile.development_goals = profile.development_goals || []
+    profile.can_help_with = sanitiseTagArray(profile.can_help_with)
+    profile.development_goals = sanitiseTagArray(profile.development_goals)
     profile.long_term_helping = await getHelpingHelpees(profile.id)
   }
   return profile
@@ -1194,24 +1276,27 @@ router.get('/browse', async (req, res) => {
     if (req.user && req.user.id) {
       const myProfileRes = await db.query('SELECT id, development_goals FROM profiles WHERE user_id = $1 LIMIT 1', [req.user.id])
       const myProfile = myProfileRes.rows[0]
-      if (myProfile && Array.isArray(myProfile.development_goals) && myProfile.development_goals.length > 0) {
-        userDevelopmentGoals = myProfile.development_goals
+      if (myProfile) {
+        const myGoals = sanitiseTagArray(myProfile.development_goals)
+        if (myGoals.length > 0) {
+          userDevelopmentGoals = myGoals
         const helperRes = await db.query(`
           SELECT * FROM profiles
           WHERE id != $1
             AND can_help_with && $2::text[]
           ORDER BY name ASC
           LIMIT 12
-        `, [myProfile.id, myProfile.development_goals])
+        `, [myProfile.id, myGoals])
 
         matchedHelpers = helperRes.rows.map((member) => {
-          const helperTags = Array.isArray(member.can_help_with) ? member.can_help_with : []
-          const sharedTags = helperTags.filter((tag) => myProfile.development_goals.includes(tag))
+          const helperTags = sanitiseTagArray(member.can_help_with)
+          const sharedTags = helperTags.filter((tag) => myGoals.includes(tag))
           return {
             ...member,
             shared_tags: sharedTags
           }
         })
+        }
       }
     }
 
@@ -1239,6 +1324,8 @@ router.get('/browse', async (req, res) => {
 
   filteredMembers = filteredMembers.map((member) => ({
     ...member,
+    can_help_with: sanitiseTagArray(member.can_help_with),
+    development_goals: sanitiseTagArray(member.development_goals),
     is_own_profile: Boolean(req.user && req.user.id && member.user_id && Number(member.user_id) === Number(req.user.id))
   }))
 
@@ -1479,16 +1566,6 @@ router.get('/my-profile/edit', ensureAuthenticated, async (req, res) => {
 
 // My profile form - POST (Protected)
 router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
-  // Parsing lists
-  const parseList = (str) => {
-    if (!str) {
-      return []
-    }
-    if (Array.isArray(str)) {
-      return str.map(item => item && item.trim()).filter(item => item)
-    }
-    return str.split(',').map(item => item.trim()).filter(item => item)
-  }
   const wordCount = (text) => {
     if (!text || !text.trim()) {
       return 0
@@ -1554,12 +1631,12 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
             WHERE user_id = $14
           `, [
         name, projectTeam || null, deliveryGroup || null, normalisedRole, location,
-        experience, about || null, linkedinProfile || null, parseList(canHelpWithTags), canHelpWithText || null,
-        parseList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus,
+        experience, about || null, linkedinProfile || null, parseTagList(canHelpWithTags), canHelpWithText || null,
+        parseTagList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus,
         userId
       ])
     } else {
-      profileId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      profileId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `user-${userId}`
       await db.query(`
             INSERT INTO profiles (
                 id, user_id, name, project_team, delivery_group, role, location, experience, bio,
@@ -1567,16 +1644,29 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
           `, [
         profileId, userId, name, projectTeam || null, deliveryGroup || null, normalisedRole, location, experience, about || null,
-        linkedinProfile || null, parseList(canHelpWithTags), canHelpWithText || null, parseList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus
+        linkedinProfile || null, parseTagList(canHelpWithTags), canHelpWithText || null, parseTagList(developmentGoalsTags), developmentGoalsText || null, normalisedAvailabilityStatus
       ])
     }
 
-    const fresh = await getProfileForUser(userId)
+    let fresh = null
+    try {
+      fresh = await getProfileForUser(userId)
+    } catch (reloadErr) {
+      console.error('Profile saved but reloading failed', reloadErr)
+    }
+    if (!fresh) {
+      try {
+        const fallback = await getMyProfileFormContext(req)
+        fresh = fallback.profile
+      } catch (_) {
+        fresh = { ...req.body }
+      }
+    }
 
     res.render('add-profile', {
       success: true,
-      newProfileId: profileId,
-      profile: fresh || { ...req.body },
+      newProfileId: profileId || (fresh && fresh.id ? fresh.id : ''),
+      profile: fresh,
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit'
@@ -1584,12 +1674,15 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error(err)
     const ctx = await getMyProfileFormContext(req)
+    const safeMsg = process.env.NODE_ENV === 'production'
+      ? 'Could not save your profile. Try again in a moment.'
+      : `Could not save your profile. (${err.message})`
     return res.render('add-profile', {
       success: false,
       isAdminMode: false,
       isWizardMode: false,
       formAction: '/my-profile/edit',
-      error: 'Error saving profile',
+      error: safeMsg,
       ...ctx
     })
   }

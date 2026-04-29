@@ -14,10 +14,6 @@
       <a class="govuk-link" href="/admin/long-term-helping">View all long-term help relationships</a>
     </p>
 
-    <p class="govuk-body-s">
-      Session changes: {{ changes.added.length }} added, {{ changes.edited.length }} edited, {{ changes.removed.length }} removed
-    </p>
-
     <h2 class="govuk-heading-m">People access and profiles</h2>
     <form method="post" action="/admin/approved-emails" class="govuk-!-margin-bottom-4">
       <div class="govuk-form-group">
@@ -61,11 +57,6 @@
             <strong class="govuk-tag govuk-tag--green">Active</strong>
             {% else %}
             —
-            {% endif %}
-            {% if row.profile_id and row.profile_id in changes.added %}
-            <p class="govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0">This session: added</p>
-            {% elif row.profile_id and row.profile_id in changes.edited %}
-            <p class="govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0">This session: edited</p>
             {% endif %}
           </td>
           <td class="govuk-table__cell">
