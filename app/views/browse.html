@@ -87,10 +87,6 @@
                   <strong class="govuk-tag govuk-tag--grey">Busy</strong>
                 {% endif %}
 
-                <p class="govuk-body-s" style="margin-top: 1em;">
-                  {{ member.bio }}
-                </p>
-
                 <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
                   <summary class="govuk-details__summary">
                     <span class="govuk-details__summary-text">
@@ -98,11 +94,19 @@
                     </span>
                   </summary>
                   <div class="govuk-details__text">
-                    <ul class="govuk-list govuk-list--bullet">
+                    {% if member.can_help_with and member.can_help_with.length %}
+                    <ul class="govuk-list govuk-list--bullet {% if member.can_help_with_text %}govuk-!-margin-bottom-2{% else %}govuk-!-margin-bottom-0{% endif %}">
                       {% for help in member.can_help_with %}
                         <li>{{ help }}</li>
                       {% endfor %}
                     </ul>
+                    {% endif %}
+                    {% if member.can_help_with_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.can_help_with_text }}</p>
+                    {% endif %}
+                    {% if (not member.can_help_with or member.can_help_with.length == 0) and not member.can_help_with_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No “can help with” detail added yet.</p>
+                    {% endif %}
                   </div>
                 </details>
 
@@ -113,11 +117,19 @@
                     </span>
                   </summary>
                   <div class="govuk-details__text">
-                    <ul class="govuk-list govuk-list--bullet">
+                    {% if member.development_goals and member.development_goals.length %}
+                    <ul class="govuk-list govuk-list--bullet {% if member.development_goals_text %}govuk-!-margin-bottom-2{% else %}govuk-!-margin-bottom-0{% endif %}">
                       {% for goal in member.development_goals %}
                         <li>{{ goal }}</li>
                       {% endfor %}
                     </ul>
+                    {% endif %}
+                    {% if member.development_goals_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.development_goals_text }}</p>
+                    {% endif %}
+                    {% if (not member.development_goals or member.development_goals.length == 0) and not member.development_goals_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No development goals added yet.</p>
+                    {% endif %}
                   </div>
                 </details>
 
@@ -164,10 +176,6 @@
                   <strong class="govuk-tag govuk-tag--grey">Busy</strong>
                 {% endif %}
 
-                <p class="govuk-body-s" style="margin-top: 1em;">
-                  {{ member.bio }}
-                </p>
-
                 <details class="govuk-details" style="margin-top: 1em; margin-bottom: 0;">
                   <summary class="govuk-details__summary">
                     <span class="govuk-details__summary-text">
@@ -175,11 +183,19 @@
                     </span>
                   </summary>
                   <div class="govuk-details__text">
-                    <ul class="govuk-list govuk-list--bullet">
+                    {% if member.can_help_with and member.can_help_with.length %}
+                    <ul class="govuk-list govuk-list--bullet {% if member.can_help_with_text %}govuk-!-margin-bottom-2{% else %}govuk-!-margin-bottom-0{% endif %}">
                       {% for help in member.can_help_with %}
                         <li>{{ help }}</li>
                       {% endfor %}
                     </ul>
+                    {% endif %}
+                    {% if member.can_help_with_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.can_help_with_text }}</p>
+                    {% endif %}
+                    {% if (not member.can_help_with or member.can_help_with.length == 0) and not member.can_help_with_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No “can help with” detail added yet.</p>
+                    {% endif %}
                   </div>
                 </details>
 
@@ -190,11 +206,19 @@
                     </span>
                   </summary>
                   <div class="govuk-details__text">
-                    <ul class="govuk-list govuk-list--bullet">
+                    {% if member.development_goals and member.development_goals.length %}
+                    <ul class="govuk-list govuk-list--bullet {% if member.development_goals_text %}govuk-!-margin-bottom-2{% else %}govuk-!-margin-bottom-0{% endif %}">
                       {% for goal in member.development_goals %}
                         <li>{{ goal }}</li>
                       {% endfor %}
                     </ul>
+                    {% endif %}
+                    {% if member.development_goals_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.development_goals_text }}</p>
+                    {% endif %}
+                    {% if (not member.development_goals or member.development_goals.length == 0) and not member.development_goals_text %}
+                    <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No development goals added yet.</p>
+                    {% endif %}
                   </div>
                 </details>
 
