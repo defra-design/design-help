@@ -7,6 +7,17 @@
   <div class="govuk-grid-column-full">
     <h1 class="govuk-heading-xl">Admin</h1>
 
+    {% if adminMsg %}
+    <div class="govuk-error-summary" data-module="govuk-error-summary" aria-labelledby="admin-msg-title" role="alert" tabindex="-1">
+      <h2 class="govuk-error-summary__title" id="admin-msg-title">
+        Adding someone to the allowed list
+      </h2>
+      <div class="govuk-error-summary__body">
+        <p class="govuk-body govuk-!-margin-bottom-0">{{ adminMsg }}</p>
+      </div>
+    </div>
+    {% endif %}
+
     <p class="govuk-body" style="margin-bottom: 1.5em;">
       <a class="govuk-button" data-module="govuk-button" href="/admin/add-profile?new=1">Add team member</a>
     </p>

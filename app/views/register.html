@@ -26,35 +26,49 @@ Create an account - Defra Design Help
 
         <h1 class="govuk-heading-xl">Create an account</h1>
 
-        <form action="/register" method="post">
+        <p class="govuk-body">
+          Use this page <strong>the first time</strong> you use Design help. An admin must have added your <span class="govuk-visually-hidden">Defra </span>work email to the allowed list. We will send a verification code to your inbox.
+        </p>
+
+        <p class="govuk-body">
+          <a class="govuk-link" href="/login">Sign in</a> if you already have an account.
+        </p>
+
+        <form action="/register" method="post" novalidate>
 
             <div class="govuk-form-group">
-                <label class="govuk-label" for="name">
-                    Full name
-                </label>
-                <input class="govuk-input" id="name" name="name" type="text" autocomplete="name">
-            </div>
-
-            <div class="govuk-form-group">
-                <label class="govuk-label" for="email">
+                <label class="govuk-label govuk-label--m" for="email">
                     Email address
                 </label>
                 <div id="email-hint" class="govuk-hint">
-                    You must use a @defra.gov.uk email address.
+                    Use the same @defra.gov.uk address your admin added to the allowed list.
                 </div>
                 <input class="govuk-input" id="email" name="username" type="email" aria-describedby="email-hint"
-                    autocomplete="email">
+                    autocomplete="email" spellcheck="false" inputmode="email">
             </div>
 
             <div class="govuk-form-group">
-                <label class="govuk-label" for="password">
+                <label class="govuk-label govuk-label--m" for="password">
                     Password
                 </label>
-                <input class="govuk-input" id="password" name="password" type="password" autocomplete="new-password">
+                <div id="password-hint" class="govuk-hint">
+                    Choose a password you will use with <span class="govuk-visually-hidden">the </span>sign in<span class="govuk-visually-hidden"> page</span> after your email is verified.
+                </div>
+                <input class="govuk-input" id="password" name="password" type="password" aria-describedby="password-hint" autocomplete="new-password">
+            </div>
+
+            <div class="govuk-form-group">
+                <label class="govuk-label govuk-label--m" for="name">
+                    Full name
+                </label>
+                <div id="name-hint" class="govuk-hint">
+                    Shown on your designer profile in the team directory.
+                </div>
+                <input class="govuk-input" id="name" name="name" type="text" aria-describedby="name-hint" autocomplete="name">
             </div>
 
             <button class="govuk-button" data-module="govuk-button" type="submit">
-                Create account
+                Create account and send verification email
             </button>
 
         </form>

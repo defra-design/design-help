@@ -14,6 +14,15 @@
       Connect with designers in the team for coaching, mentoring, design critiques and advice.
     </p>
 
+    {% if not user %}
+    <p class="govuk-body">
+      <a class="govuk-link govuk-link--no-visited-state" href="/login">Sign in</a>
+      or
+      <a class="govuk-link govuk-link--no-visited-state" href="/register">create an account</a>
+      to use the directory and your profile.
+    </p>
+    {% endif %}
+
     <h2 class="govuk-heading-m">What do you need help with?</h2>
 
     <p class="govuk-body">

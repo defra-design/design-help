@@ -30,13 +30,24 @@ Sign in - Defra Design Help
 
     <h1 class="govuk-heading-xl">Sign in</h1>
 
-    <form action="/login" method="post">
+    <div class="govuk-inset-text govuk-!-margin-bottom-6">
+      <p class="govuk-body">
+        This page is <strong>only if you already have an account</strong> (for example you have completed email verification after registering).
+      </p>
+      <p class="govuk-body govuk-!-margin-bottom-0">
+        <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/register">Create an account</a>
+      </p>
+    </div>
+
+    <h2 class="govuk-heading-m">Your sign-in details</h2>
+
+    <form action="/login" method="post" novalidate>
 
       <div class="govuk-form-group">
         <label class="govuk-label" for="email">
           Email address
         </label>
-        <input class="govuk-input" id="email" name="username" type="email" autocomplete="email">
+        <input class="govuk-input" id="email" name="username" type="email" autocomplete="email" spellcheck="false">
       </div>
 
       <div class="govuk-form-group">
@@ -52,8 +63,8 @@ Sign in - Defra Design Help
 
     </form>
 
-    <p class="govuk-body">
-      <a class="govuk-link" href="/register">Create an account</a>
+    <p class="govuk-body govuk-!-margin-top-6">
+      New to Design help? <a class="govuk-link" href="/register">Create an account</a>.
     </p>
 
   </div>

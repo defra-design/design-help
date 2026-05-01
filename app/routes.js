@@ -727,7 +727,10 @@ router.post('/register', async (req, res) => {
   try {
     let isApproved = false
     try {
-      const approvedRes = await db.query('SELECT 1 FROM approved_emails WHERE email = $1 LIMIT 1', [emailLower])
+      const approvedRes = await db.query(
+        'SELECT 1 FROM approved_emails WHERE LOWER(TRIM(email)) = $1 LIMIT 1',
+        [emailLower]
+      )
       isApproved = approvedRes.rows.length > 0
     } catch (approvedErr) {
       console.error('Approved emails lookup failed, using fallback list', approvedErr)
@@ -770,7 +773,7 @@ router.post('/register', async (req, res) => {
     try {
       await sendVerificationCodeForEmail(req, emailLower, verificationCode)
     } catch (notifyErr) {
-      console.error('Notify send failed', notifyErr)
+      console.error('Verification email failed; registering user rolled back (see preceding GOV.UK Notify log line).', notifyErr.message)
       try {
         await db.query('DELETE FROM profiles WHERE user_id = $1', [userId])
         await db.query('DELETE FROM users WHERE id = $1', [userId])
@@ -935,9 +938,17 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
     })
 
     const changes = getAdminSessionChanges(req)
+    const adminMsg = req.query.adminMsg === 'not-defra'
+      ? 'Only @defra.gov.uk addresses can be added. Check the address and try again.'
+      : req.query.adminMsg === 'missing'
+        ? 'Enter an email address.'
+        : req.query.adminMsg === 'duplicate'
+          ? 'That address is already on the allowed list.'
+          : null
     return res.render('admin-users', {
       rows,
-      changes
+      changes,
+      adminMsg
     })
   } catch (err) {
     console.error(err)
@@ -946,12 +957,22 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
 })
 
 router.post('/admin/approved-emails', ensureAdmin, async (req, res) => {
-  const email = String(req.body.email || '').trim().toLowerCase()
-  if (!email || !email.endsWith('@defra.gov.uk')) {
-    return res.redirect('/admin/users')
+  const raw = String(req.body.email || '').trim()
+  const email = raw.toLowerCase()
+  if (!email) {
+    return res.redirect('/admin/users?adminMsg=missing')
+  }
+  if (!email.endsWith('@defra.gov.uk')) {
+    return res.redirect('/admin/users?adminMsg=not-defra')
   }
   try {
-    await db.query('INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING', [email])
+    const ins = await db.query(
+      'INSERT INTO approved_emails (email) VALUES ($1) ON CONFLICT (email) DO NOTHING RETURNING id',
+      [email]
+    )
+    if (ins.rows.length === 0) {
+      return res.redirect('/admin/users?adminMsg=duplicate')
+    }
     res.redirect('/admin/users')
   } catch (err) {
     console.error(err)
