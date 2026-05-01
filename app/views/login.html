@@ -30,15 +30,6 @@ Sign in - Defra Design Help
 
     <h1 class="govuk-heading-xl">Sign in</h1>
 
-    <div class="govuk-inset-text govuk-!-margin-bottom-6">
-      <p class="govuk-body">
-        This page is <strong>only if you already have an account</strong> (for example you have completed email verification after registering).
-      </p>
-      <p class="govuk-body govuk-!-margin-bottom-0">
-        <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/register">Create an account</a>
-      </p>
-    </div>
-
     <h2 class="govuk-heading-m">Your sign-in details</h2>
 
     <form action="/login" method="post" novalidate>
@@ -67,6 +58,19 @@ Sign in - Defra Design Help
       New to Design help? <a class="govuk-link" href="/register">Create an account</a>.
     </p>
 
+  </div>
+
+  <div class="govuk-grid-column-one-third">
+    <aside class="govuk-!-margin-top-6" aria-label="Who can use this page">
+      <div class="govuk-inset-text">
+        <p class="govuk-body">
+          This page is <strong>only if you already have an account</strong> (for example you have completed email verification after registering).
+        </p>
+        <p class="govuk-body govuk-!-margin-bottom-0">
+          <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/register">Create an account</a>
+        </p>
+      </div>
+    </aside>
   </div>
 </div>
 {% endblock %}

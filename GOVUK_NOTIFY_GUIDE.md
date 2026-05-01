@@ -87,3 +87,48 @@ In `app/routes.js`, update the registration logic:
       // You might want to show an error to the user here
     }
     ```
+
+---
+
+## 5. Service feedback (Notify live criteria)
+
+Design help sends **service feedback** to a team inbox using a **second** email template (not the verification template).
+
+### Environment variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `NOTIFY_API_KEY` | Yes, for sending | Same key as verification. |
+| `NOTIFY_FEEDBACK_TEMPLATE_ID` | Yes in production | Template for feedback emails to the team. |
+| `FEEDBACK_INBOX_EMAIL` | Optional | Where feedback is delivered (default: `pete.smith@defra.gov.uk`). Must be a team address you can receive in Notify. |
+
+### Create the feedback template in Notify
+
+1. **New template** → **Email**.
+2. **Name:** e.g. `Design help — service feedback`.
+3. **Send to:** the address you will pass from the app (`FEEDBACK_INBOX_EMAIL`). The API sends **to** that inbox; the template body is the email *content* you receive.
+4. **Subject:** e.g. `Design help: feedback about ((page_path))`
+5. **Body** — include these placeholders (names must match exactly):
+
+```
+Service: ((service_name))
+
+Page they were on: ((page_path))
+
+Signed in as: ((signed_in_as))
+
+Contact email (if given): ((contact_email))
+
+Feedback:
+
+((feedback_details))
+```
+
+6. Copy the template ID into **`NOTIFY_FEEDBACK_TEMPLATE_ID`** (Heroku config vars and local `.env`).
+
+### Behaviour without the feedback template
+
+- **Production:** users see a clear message that feedback sending is not configured yet (so you do not silently drop feedback).
+- **Non-production:** submissions are **logged to the server console** (similar to verification simulation) and the user still sees the thank-you page.
+
+The **Give feedback** link appears **above the main GOV.UK footer** on every page except the feedback flow itself (`/feedback` and `/feedback/thank-you`).

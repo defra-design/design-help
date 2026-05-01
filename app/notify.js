@@ -4,6 +4,10 @@ function isNotifyConfigured () {
   return Boolean(process.env.NOTIFY_API_KEY && process.env.NOTIFY_TEMPLATE_ID)
 }
 
+function isFeedbackNotifyConfigured () {
+  return Boolean(process.env.NOTIFY_API_KEY && process.env.NOTIFY_FEEDBACK_TEMPLATE_ID)
+}
+
 /**
  * @param {string} emailAddress
  * @param {string} code
@@ -47,7 +51,45 @@ async function sendVerificationEmail (emailAddress, code) {
   }
 }
 
+/**
+ * Sends aggregated service feedback to the team inbox (GOV.UK Notify).
+ * Template must define the same personalisation keys as passed here.
+ *
+ * @param {string} inboxEmail
+ * @param {{ feedbackDetails: string, pagePath: string, contactEmail: string, signedInAs: string }} fields
+ * @returns {Promise<void>}
+ */
+async function sendServiceFeedbackEmail (inboxEmail, fields) {
+  if (!isFeedbackNotifyConfigured()) {
+    const err = new Error('NOTIFY feedback not configured')
+    err.code = 'NOTIFY_FEEDBACK_NOT_CONFIGURED'
+    throw err
+  }
+  const client = new NotifyClient(process.env.NOTIFY_API_KEY)
+  try {
+    await client.sendEmail(
+      process.env.NOTIFY_FEEDBACK_TEMPLATE_ID,
+      inboxEmail,
+      {
+        personalisation: {
+          service_name: 'Design help',
+          feedback_details: fields.feedbackDetails,
+          page_path: fields.pagePath,
+          contact_email: fields.contactEmail,
+          signed_in_as: fields.signedInAs
+        },
+        reference: `design-help-feedback-${Date.now()}`
+      }
+    )
+  } catch (err) {
+    logNotifyApiFailure('sendServiceFeedbackEmail', inboxEmail, err)
+    throw err
+  }
+}
+
 module.exports = {
   sendVerificationEmail,
-  isNotifyConfigured
+  isNotifyConfigured,
+  sendServiceFeedbackEmail,
+  isFeedbackNotifyConfigured
 }

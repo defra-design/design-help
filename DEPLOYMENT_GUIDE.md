@@ -49,6 +49,9 @@ heroku config:set NODE_ENV=production
 ```bash
 heroku config:set NOTIFY_API_KEY=your_key
 heroku config:set NOTIFY_TEMPLATE_ID=your_id
+heroku config:set NOTIFY_FEEDBACK_TEMPLATE_ID=your_feedback_template_id
+# Optional — defaults to pete.smith@defra.gov.uk if unset
+heroku config:set FEEDBACK_INBOX_EMAIL=your-team-inbox@defra.gov.uk
 ```
 
 ## 5. Deploy the Code

@@ -12,7 +12,12 @@ const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const bcrypt = require('bcrypt')
 const db = require('./db')
-const { sendVerificationEmail, isNotifyConfigured } = require('./notify')
+const {
+  sendVerificationEmail,
+  isNotifyConfigured,
+  sendServiceFeedbackEmail,
+  isFeedbackNotifyConfigured
+} = require('./notify')
 const crypto = require('crypto')
 const authBypassEnabled = process.env.NODE_ENV !== 'production' && process.env.AUTH_BYPASS === 'true'
 const authBypassUser = {
@@ -229,6 +234,26 @@ function isAdminUser(user) {
 function isAdminEmailAddress(email) {
   return Boolean(email && adminEmails.has(String(email).toLowerCase()))
 }
+
+const feedbackInboxEmail = String(process.env.FEEDBACK_INBOX_EMAIL || 'pete.smith@defra.gov.uk').trim()
+
+function sanitiseFeedbackReturnPath (raw) {
+  if (raw === undefined || raw === null) {
+    return '/'
+  }
+  const s = String(raw).trim()
+  if (!s.startsWith('/') || s.startsWith('//')) return '/'
+  if (s.length > 512) return '/'
+  return s
+}
+
+const feedbackHowEasyOptions = [
+  'Very easy',
+  'Easy',
+  'Neither easy nor difficult',
+  'Difficult',
+  'Very difficult'
+]
 
 function ensureAdmin(req, res, next) {
   if (isAdminUser(req.user)) {
@@ -612,6 +637,8 @@ router.use((req, res, next) => {
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
   res.locals.appVersion = codeReleaseVersion
+  res.locals.feedbackLinkHref = '/feedback?return=' + encodeURIComponent(req.path || '/')
+  res.locals.showFeedbackFooter = !req.path.startsWith('/feedback')
   next()
 })
 
@@ -626,6 +653,8 @@ router.use((req, res, next) => {
     '/login',
     '/register',
     '/verify-email',
+    '/about',
+    '/feedback',
     '/public',
     '/assets',
     '/govuk-frontend',
@@ -672,6 +701,8 @@ router.use((req, res, next) => {
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
   res.locals.appVersion = codeReleaseVersion
+  res.locals.feedbackLinkHref = '/feedback?return=' + encodeURIComponent(req.path || '/')
+  res.locals.showFeedbackFooter = !req.path.startsWith('/feedback')
   next()
 })
 
@@ -713,6 +744,95 @@ router.get('/register', (req, res) => {
 
 router.get('/about', (req, res) => {
   res.render('about')
+})
+
+router.get('/feedback/thank-you', (req, res) => {
+  res.render('feedback-thank-you')
+})
+
+router.get('/feedback', (req, res) => {
+  const returnPath = sanitiseFeedbackReturnPath(req.query.return)
+  res.render('feedback', {
+    returnPath,
+    errors: null,
+    values: {
+      details: '',
+      contact_email: req.user ? String(req.user.email || '') : '',
+      how_easy: ''
+    },
+    howEasyOptions: feedbackHowEasyOptions
+  })
+})
+
+router.post('/feedback', async (req, res) => {
+  const returnPath = sanitiseFeedbackReturnPath(req.body.return_path)
+  const details = String(req.body.details || '').trim()
+  const contactEmail = String(req.body.contact_email || '').trim()
+  const howEasyRaw = String(req.body.how_easy || '').trim()
+  const howEasy = feedbackHowEasyOptions.includes(howEasyRaw) ? howEasyRaw : ''
+
+  const errors = {}
+  if (!details) {
+    errors.details = 'Enter your feedback'
+  } else if (details.length > 4000) {
+    errors.details = 'Feedback must be 4000 characters or fewer'
+  }
+  if (contactEmail.length > 255) {
+    errors.contact_email = 'Email address is too long'
+  } else if (contactEmail) {
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)
+    if (!emailOk) {
+      errors.contact_email = 'Enter an email address in the correct format, or leave this blank'
+    }
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return res.render('feedback', {
+      returnPath,
+      errors,
+      values: { details, contact_email: contactEmail, how_easy: howEasy },
+      howEasyOptions: feedbackHowEasyOptions
+    })
+  }
+
+  const easeLine = howEasy ? `How easy was this service to use: ${howEasy}\n\n` : ''
+  const feedbackDetails = easeLine + details
+  const signedInAs = req.user && req.user.email ? String(req.user.email) : 'Not signed in'
+
+  if (isFeedbackNotifyConfigured()) {
+    try {
+      await sendServiceFeedbackEmail(feedbackInboxEmail, {
+        feedbackDetails,
+        pagePath: returnPath,
+        contactEmail: contactEmail || 'Not provided',
+        signedInAs
+      })
+    } catch (err) {
+      console.error('Feedback Notify send failed', err)
+      return res.render('feedback', {
+        returnPath,
+        errors: { _form: 'Your feedback could not be sent. Try again in a few minutes.' },
+        values: { details, contact_email: contactEmail, how_easy: howEasy },
+        howEasyOptions: feedbackHowEasyOptions
+      })
+    }
+  } else if (process.env.NODE_ENV === 'production') {
+    return res.render('feedback', {
+      returnPath,
+      errors: {
+        _form: 'Sending feedback is not available yet. Ask the team to add a GOV.UK Notify feedback template (NOTIFY_FEEDBACK_TEMPLATE_ID).'
+      },
+      values: { details, contact_email: contactEmail, how_easy: howEasy },
+      howEasyOptions: feedbackHowEasyOptions
+    })
+  } else {
+    console.log('---------------------------------------------------')
+    console.log('[FEEDBACK SIMULATION] Intended recipient:', feedbackInboxEmail)
+    console.log(JSON.stringify({ pagePath: returnPath, contactEmail: contactEmail || null, signedInAs, feedbackDetails }, null, 2))
+    console.log('---------------------------------------------------')
+  }
+
+  res.redirect(303, '/feedback/thank-you')
 })
 
 router.post('/register', async (req, res) => {
