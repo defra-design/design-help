@@ -75,7 +75,10 @@ const localBrowseShortcutTags = [
   'Mural support',
   'Figma support',
   'Accessibility questions',
-  'Feedback on service design artefact'
+  'Feedback on service design artefact',
+  'Heroku',
+  'SOP and admin systems',
+  'AI tooling and prompts'
 ]
 
 db.query(`
