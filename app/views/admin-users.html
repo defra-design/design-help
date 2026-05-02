@@ -24,6 +24,9 @@
     <p class="govuk-body-s govuk-!-margin-bottom-4">
       <a class="govuk-link" href="/admin/long-term-helping">View all long-term help relationships</a>
     </p>
+    <p class="govuk-body govuk-!-margin-bottom-4">
+      <a class="govuk-link" href="/review/gdad-evidence">Review GDaD evidence and scores</a> (interaction and service design roles only)
+    </p>
 
     <h2 class="govuk-heading-m">People access and profiles</h2>
     <form method="post" action="/admin/approved-emails" class="govuk-!-margin-bottom-4">
@@ -42,6 +45,7 @@
           <th scope="col" class="govuk-table__header">Job title</th>
           <th scope="col" class="govuk-table__header">Email</th>
           <th scope="col" class="govuk-table__header">Account</th>
+          <th scope="col" class="govuk-table__header">GDaD</th>
           <th scope="col" class="govuk-table__header">Action</th>
         </tr>
       </thead>
@@ -66,6 +70,15 @@
             <strong class="govuk-tag govuk-tag--blue">Admin</strong>
             {% elif row.profile_id %}
             <strong class="govuk-tag govuk-tag--green">Active</strong>
+            {% else %}
+            —
+            {% endif %}
+          </td>
+          <td class="govuk-table__cell">
+            {% if row.user_id and row.gdad_applicable %}
+            <a class="govuk-link" href="/review/gdad-evidence/{{ row.user_id }}">Evidence</a>
+            {% elif row.role and not row.gdad_applicable and row.user_id %}
+            <span class="govuk-hint govuk-!-margin-bottom-0">N/A</span>
             {% else %}
             —
             {% endif %}

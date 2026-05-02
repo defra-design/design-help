@@ -25,6 +25,16 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
           <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if currentPath == '/requests' else '' }}">
             <a class="govuk-service-navigation__link" href="/requests">Requests</a>
           </li>
+          {% if gdadEvidenceApplicable %}
+          <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if currentPath == '/my-gdad-evidence' else '' }}">
+            <a class="govuk-service-navigation__link" href="/my-gdad-evidence">GDaD evidence</a>
+          </li>
+          {% endif %}
+          {% if isAdmin or isGdAdScorer %}
+          <li class="govuk-service-navigation__item {{ 'govuk-service-navigation__item--active' if activeReviewGdAd else '' }}">
+            <a class="govuk-service-navigation__link" href="/review/gdad-evidence">Review GDaD</a>
+          </li>
+          {% endif %}
         </ul>
       </nav>
       <div style="display: flex; gap: 12px; align-items: center;">

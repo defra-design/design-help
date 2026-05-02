@@ -168,3 +168,13 @@ Use route middleware (e.g. `ensureEvidenceOwnerOrAdmin`, `ensureGdAdScorer`) and
 | `AGENTS.md` | Release versioning (`YYYY.MM.DD.N` in `app/config.json`) when shipping |
 
 When this feature ships, bump **`releaseVersion`** in `app/config.json` and document any new **config vars** (e.g. `GDAD_SCORER_EMAILS`) in `DEPLOYMENT_GUIDE.md` or a short subsection here.
+
+### Implemented routes (MVP)
+
+| Route | Who |
+|-------|-----|
+| `GET/POST /my-gdad-evidence` | Signed-in designer (GDaD-applicable job title only) — edit STAR evidence |
+| `GET /review/gdad-evidence` | Admin or `GDAD_SCORER_EMAILS` — list eligible people |
+| `GET/POST /review/gdad-evidence/:userId` | Admin or scorers — read evidence, set scores |
+
+The **DDaT capability framework** site shows role pages (e.g. [service designer](https://ddat-capability-framework.service.gov.uk/role/service-designer)) with tables of skills by level; this app uses a **three-column band** (working / practitioner / expert) plus links to each skill anchor for alignment.

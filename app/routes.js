@@ -18,6 +18,12 @@ const {
   sendServiceFeedbackEmail,
   isFeedbackNotifyConfigured
 } = require('./notify')
+const { registerGdAdRoutes } = require('./gdad/routes')
+const { ensureGdadTable } = require('./gdad/evidence-store')
+const {
+  isGdAdEvidenceApplicableRole,
+  isGdAdScorer: isGdAdScorerUser
+} = require('./gdad/constants')
 const crypto = require('crypto')
 const authBypassEnabled = process.env.NODE_ENV !== 'production' && process.env.AUTH_BYPASS === 'true'
 const authBypassUser = {
@@ -197,6 +203,10 @@ db.query(`
   );
 `).catch((err) => {
   console.error('Long-term helping table create failed', err)
+})
+
+ensureGdadTable(db).catch((err) => {
+  console.error('GDaD evidence table create failed', err)
 })
 
 db.query(`
@@ -642,6 +652,25 @@ router.use((req, res, next) => {
   res.locals.appVersion = codeReleaseVersion
   res.locals.feedbackLinkHref = '/feedback?return=' + encodeURIComponent(req.path || '/')
   res.locals.showFeedbackFooter = !req.path.startsWith('/feedback')
+  res.locals.activeReviewGdAd = typeof req.path === 'string' && req.path.startsWith('/review/gdad-evidence')
+  next()
+})
+
+router.use(async (req, res, next) => {
+  res.locals.profileJobRole = null
+  res.locals.gdadEvidenceApplicable = false
+  res.locals.isGdAdScorer = isGdAdScorerUser(req.user)
+  if (!req.user || authBypassEnabled) {
+    return next()
+  }
+  try {
+    const r = await db.query('SELECT role FROM profiles WHERE user_id = $1 LIMIT 1', [req.user.id])
+    const jobRole = r.rows[0] && r.rows[0].role
+    res.locals.profileJobRole = jobRole
+    res.locals.gdadEvidenceApplicable = Boolean(jobRole && isGdAdEvidenceApplicableRole(jobRole))
+  } catch (e) {
+    console.error('Profile role for layout failed', e)
+  }
   next()
 })
 
@@ -697,6 +726,11 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/login')
 }
 
+async function getProfileByUserId (userId) {
+  const r = await db.query('SELECT * FROM profiles WHERE user_id = $1 LIMIT 1', [userId])
+  return r.rows[0] || null
+}
+
 // Make user available in templates
 router.use((req, res, next) => {
   res.locals.user = req.user
@@ -706,6 +740,8 @@ router.use((req, res, next) => {
   res.locals.appVersion = codeReleaseVersion
   res.locals.feedbackLinkHref = '/feedback?return=' + encodeURIComponent(req.path || '/')
   res.locals.showFeedbackFooter = !req.path.startsWith('/feedback')
+  res.locals.isGdAdScorer = isGdAdScorerUser(req.user)
+  res.locals.activeReviewGdAd = typeof req.path === 'string' && req.path.startsWith('/review/gdad-evidence')
   next()
 })
 
@@ -1032,8 +1068,10 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
         approved_email_id: approvedMatch ? approvedMatch.id : null,
         email: displayEmail || (approvedMatch ? approvedMatch.email : null),
         profile_id: profile.id,
+        user_id: profile.user_id,
         name: profile.name,
         role: profile.role,
+        gdad_applicable: Boolean(profile.user_id && isGdAdEvidenceApplicableRole(profile.role)),
         pending_activation: false,
         is_admin: isAdminEmailAddress(displayEmail)
       }
@@ -1046,8 +1084,10 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
           approved_email_id: approved.id,
           email: approved.email,
           profile_id: null,
+          user_id: null,
           name: null,
           role: null,
+          gdad_applicable: false,
           pending_activation: true,
           is_admin: isAdminEmailAddress(approved.email)
         })
@@ -1974,6 +2014,14 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
       ...ctx
     })
   }
+})
+
+registerGdAdRoutes(router, {
+  db,
+  ensureAuthenticated,
+  isAdminUser,
+  isGdAdScorer: isGdAdScorerUser,
+  getProfileByUserId
 })
 
 module.exports = router

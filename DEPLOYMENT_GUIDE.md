@@ -54,6 +54,12 @@ heroku config:set NOTIFY_FEEDBACK_TEMPLATE_ID=your_feedback_template_id
 heroku config:set FEEDBACK_INBOX_EMAIL=your-team-inbox@defra.gov.uk
 ```
 
+**GDaD evidence reviewers** (optional — comma-separated `@defra.gov.uk` addresses allowed to set official 1–3 scores without being in `ADMIN_EMAILS`; admins can always score):
+
+```bash
+heroku config:set GDAD_SCORER_EMAILS=name1@defra.gov.uk,name2@defra.gov.uk
+```
+
 ## 5. Deploy the Code
 
 Push your local code to Heroku.

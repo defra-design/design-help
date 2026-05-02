@@ -1,0 +1,43 @@
+{% extends "layouts/main.html" %}
+
+{% block pageTitle %}
+Review GDaD evidence - Defra Design Help
+{% endblock %}
+
+{% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+
+    <h1 class="govuk-heading-xl">Review GDaD evidence</h1>
+    <p class="govuk-body">
+      People listed here use a job title on the GDaD design skills path (accessibility-only titles are excluded). Open someone to read their evidence and set official scores.
+    </p>
+
+    {% if rows and rows.length %}
+    <table class="govuk-table">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Name</th>
+          <th scope="col" class="govuk-table__header">Job title</th>
+          <th scope="col" class="govuk-table__header">Action</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        {% for row in rows %}
+        <tr class="govuk-table__row">
+          <td class="govuk-table__cell">{{ row.name }}</td>
+          <td class="govuk-table__cell">{{ row.role }}</td>
+          <td class="govuk-table__cell">
+            <a class="govuk-link" href="/review/gdad-evidence/{{ row.user_id }}">Open evidence and scores</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="govuk-body">No eligible profiles found.</p>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
