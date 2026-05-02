@@ -60,6 +60,8 @@ heroku config:set FEEDBACK_INBOX_EMAIL=your-team-inbox@defra.gov.uk
 heroku config:set GDAD_SCORER_EMAILS=name1@defra.gov.uk,name2@defra.gov.uk
 ```
 
+**GDaD — head of design (planned)** — when the **CSV export of final scores** ships, it will be restricted to addresses in **`GDAD_HEAD_OF_DESIGN_EMAILS`** (comma-separated). See [GDAD_SKILLS_EVIDENCE.md](GDAD_SKILLS_EVIDENCE.md) §5.
+
 ## 5. Deploy the Code
 
 Push your local code to Heroku.

@@ -5,9 +5,9 @@
 {% block content %}
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-full">
-    <p class="govuk-body">
-      <a href="/admin/users" class="govuk-back-link">Back to admin</a>
-    </p>
+    {% set adminToolsActiveTab = 'longterm' %}
+    {% include "partials/admin-tools-nav.html" %}
+
     <h1 class="govuk-heading-xl">Long-term help relationships</h1>
     <p class="govuk-body">
       Designers record ongoing help they are giving (not short drop-ins). This list is only visible to admins and to each person on their own profile.

@@ -6,14 +6,59 @@ Review GDaD evidence - Defra Design Help
 
 {% block content %}
 <div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
+  <div class="govuk-grid-column-full">
+    {% set adminToolsActiveTab = 'gdad' %}
+    {% include "partials/admin-tools-nav.html" %}
 
     <h1 class="govuk-heading-xl">Review GDaD evidence</h1>
     <p class="govuk-body">
-      People listed here use a job title on the GDaD design skills path (accessibility-only titles are excluded). Open someone to read their evidence and set official scores.
+      Designers on the GDaD design skills path (accessibility-only job titles are excluded). Use the tables below to find people who have entered evidence and to open their submissions for scoring.
     </p>
 
-    {% if rows and rows.length %}
+    {% if not rowsWithEvidence.length and not rowsNoEvidenceYet.length %}
+    <p class="govuk-body">No designer profiles use a GDaD-applicable job title yet.</p>
+    {% else %}
+
+    <h2 class="govuk-heading-m">Designers who have submitted evidence</h2>
+    <p class="govuk-body">
+      Listed when they have saved text for at least one of the seven skills. “Skills with evidence” counts skills that currently have content.
+    </p>
+
+    {% if rowsWithEvidence and rowsWithEvidence.length %}
+    <table class="govuk-table govuk-!-margin-bottom-8">
+      <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+          <th scope="col" class="govuk-table__header">Name</th>
+          <th scope="col" class="govuk-table__header">Job title</th>
+          <th scope="col" class="govuk-table__header">Skills with evidence</th>
+          <th scope="col" class="govuk-table__header">Last evidence update</th>
+          <th scope="col" class="govuk-table__header">Action</th>
+        </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+        {% for row in rowsWithEvidence %}
+        <tr class="govuk-table__row">
+          <td class="govuk-table__cell">{{ row.name }}</td>
+          <td class="govuk-table__cell">{{ row.role }}</td>
+          <td class="govuk-table__cell">{{ row.skills_with_evidence }} / {{ skillCount }}</td>
+          <td class="govuk-table__cell">{{ row.last_evidence_label or "—" }}</td>
+          <td class="govuk-table__cell">
+            <a class="govuk-link" href="/review/gdad-evidence/{{ row.user_id }}">Open evidence and scores</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="govuk-body govuk-!-margin-bottom-8">No-one has submitted evidence yet.</p>
+    {% endif %}
+
+    <h2 class="govuk-heading-m">Eligible — no evidence submitted yet</h2>
+    <p class="govuk-body">
+      These job titles are on the GDaD path but there is no saved skill evidence yet (or all fields were cleared).
+    </p>
+
+    {% if rowsNoEvidenceYet and rowsNoEvidenceYet.length %}
     <table class="govuk-table">
       <thead class="govuk-table__head">
         <tr class="govuk-table__row">
@@ -23,19 +68,21 @@ Review GDaD evidence - Defra Design Help
         </tr>
       </thead>
       <tbody class="govuk-table__body">
-        {% for row in rows %}
+        {% for row in rowsNoEvidenceYet %}
         <tr class="govuk-table__row">
           <td class="govuk-table__cell">{{ row.name }}</td>
           <td class="govuk-table__cell">{{ row.role }}</td>
           <td class="govuk-table__cell">
-            <a class="govuk-link" href="/review/gdad-evidence/{{ row.user_id }}">Open evidence and scores</a>
+            <a class="govuk-link" href="/review/gdad-evidence/{{ row.user_id }}">Open (no evidence yet)</a>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     {% else %}
-    <p class="govuk-body">No eligible profiles found.</p>
+    <p class="govuk-body">Everyone eligible has at least one skill with evidence.</p>
+    {% endif %}
+
     {% endif %}
 
   </div>

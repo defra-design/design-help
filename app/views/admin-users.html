@@ -5,6 +5,9 @@
 {% block content %}
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-full">
+    {% set adminToolsActiveTab = 'people' %}
+    {% include "partials/admin-tools-nav.html" %}
+
     <h1 class="govuk-heading-xl">Admin</h1>
 
     {% if adminMsg %}
@@ -20,12 +23,6 @@
 
     <p class="govuk-body" style="margin-bottom: 1.5em;">
       <a class="govuk-button" data-module="govuk-button" href="/admin/add-profile?new=1">Add team member</a>
-    </p>
-    <p class="govuk-body-s govuk-!-margin-bottom-4">
-      <a class="govuk-link" href="/admin/long-term-helping">View all long-term help relationships</a>
-    </p>
-    <p class="govuk-body govuk-!-margin-bottom-4">
-      <a class="govuk-link" href="/review/gdad-evidence">Review GDaD evidence and scores</a> (interaction and service design roles only)
     </p>
 
     <h2 class="govuk-heading-m">People access and profiles</h2>

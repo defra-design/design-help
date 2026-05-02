@@ -14,7 +14,7 @@ const ACCESSIBILITY_ONLY_ROLES = new Set([
 ])
 
 const gdadScorerEmails = new Set(
-  (process.env.GDAD_SCORER_EMAILS ? process.env.GDAD_SCORER_EMAILS.split(',') : '')
+  (process.env.GDAD_SCORER_EMAILS ? process.env.GDAD_SCORER_EMAILS.split(',') : [])
     .map((e) => String(e || '').trim().toLowerCase())
     .filter(Boolean)
 )
@@ -35,8 +35,7 @@ function isGdAdScorer (user) {
 }
 
 /**
- * Three bands used in the UI (aligned with DDaT “Working”, “Practitioner”, “Expert” and
- * the internal SEO / G7 / G6 matrix). Short summaries — full wording is on the framework site.
+ * Three bands (aligned with DDaT Working / Practitioner / Expert). Short summaries — full wording is on the framework site.
  */
 const LEVEL_BANDS = [
   {
@@ -58,6 +57,134 @@ const LEVEL_BANDS = [
     description: 'Typical expectations at lead grades (for example G6). Organisation-wide or strategic impact.'
   }
 ]
+
+/**
+ * Maps profile job titles to framework “tracks”. Skill matrices follow the published role pages:
+ * — https://ddat-capability-framework.service.gov.uk/role/service-designer
+ * — https://ddat-capability-framework.service.gov.uk/role/interaction-designer
+ * For levels 3–6, Working / Practitioner / Expert expectations per skill are the same on both pages (Aug 2025);
+ * interaction-designer and service-designer tracks use aliased matrices below.
+ */
+const ROLE_TO_FRAMEWORK_TRACK = {
+  'Interaction Designer': 'interaction_designer',
+  'Service Designer': 'service_designer',
+  'Senior Interaction Designer': 'senior_interaction_designer',
+  'Senior Service Designer': 'senior_service_designer',
+  'Principal Service Designer': 'lead_service_designer',
+  'Design Manager': 'lead_service_designer',
+  'Senior Resource Manager': 'lead_service_designer',
+  'Head of Design': 'head_of_service_design'
+}
+
+const FRAMEWORK_TRACK_LABEL = {
+  service_designer: 'Service designer',
+  senior_service_designer: 'Senior service designer',
+  lead_service_designer: 'Lead service designer',
+  head_of_service_design: 'Head of service design',
+  interaction_designer: 'Interaction designer',
+  senior_interaction_designer: 'Senior interaction designer',
+  lead_interaction_designer: 'Lead interaction designer',
+  head_of_interaction_design: 'Head of interaction design'
+}
+
+/**
+ * Per-skill expected level (working | practitioner | expert) from the service designer role tables.
+ * Interaction designer role tables use the same pattern — alias tracks point here.
+ */
+const FRAMEWORK_TRACK_SKILL_LEVELS = {
+  service_designer: {
+    design_communication: 'working',
+    designing_for_everyone: 'working',
+    designing_strategically: 'working',
+    designing_together: 'working',
+    evidence_based_design: 'working',
+    iterative_design: 'working',
+    leading_design: 'working'
+  },
+  senior_service_designer: {
+    design_communication: 'practitioner',
+    designing_for_everyone: 'practitioner',
+    designing_strategically: 'practitioner',
+    designing_together: 'practitioner',
+    evidence_based_design: 'practitioner',
+    iterative_design: 'practitioner',
+    leading_design: 'working'
+  },
+  lead_service_designer: {
+    design_communication: 'expert',
+    designing_for_everyone: 'expert',
+    designing_strategically: 'practitioner',
+    designing_together: 'expert',
+    evidence_based_design: 'expert',
+    iterative_design: 'expert',
+    leading_design: 'practitioner'
+  },
+  head_of_service_design: {
+    design_communication: 'expert',
+    designing_for_everyone: 'expert',
+    designing_strategically: 'expert',
+    designing_together: 'expert',
+    evidence_based_design: 'expert',
+    iterative_design: 'expert',
+    leading_design: 'expert'
+  }
+}
+
+FRAMEWORK_TRACK_SKILL_LEVELS.interaction_designer = FRAMEWORK_TRACK_SKILL_LEVELS.service_designer
+FRAMEWORK_TRACK_SKILL_LEVELS.senior_interaction_designer = FRAMEWORK_TRACK_SKILL_LEVELS.senior_service_designer
+FRAMEWORK_TRACK_SKILL_LEVELS.lead_interaction_designer = FRAMEWORK_TRACK_SKILL_LEVELS.lead_service_designer
+FRAMEWORK_TRACK_SKILL_LEVELS.head_of_interaction_design = FRAMEWORK_TRACK_SKILL_LEVELS.head_of_service_design
+
+/** Profile job titles whose framework role page is interaction-designer (others default to service-designer). */
+const JOB_TITLES_INTERACTION_DESIGNER_ROLE_PAGE = new Set([
+  'Interaction Designer',
+  'Senior Interaction Designer'
+])
+
+/** Served by app — local copy of team matrix PNG; canonical levels are from the framework role page. */
+const GDAD_SKILLS_MATRIX_URL = '/gdad-reference/skills-matrix.png'
+
+function getFrameworkTrackKeyForJobTitle (role) {
+  if (!role) return 'service_designer'
+  const trimmed = String(role).trim()
+  return ROLE_TO_FRAMEWORK_TRACK[trimmed] || 'service_designer'
+}
+
+/** Human-readable DDaT role level label (interaction or service pathway), for UI copy. */
+function getFrameworkRolePageLabel (role) {
+  const track = getFrameworkTrackKeyForJobTitle(role)
+  return FRAMEWORK_TRACK_LABEL[track] || FRAMEWORK_TRACK_LABEL.service_designer
+}
+
+/** Full URL to the relevant DDaT “role” page (interaction vs service designer pathway). */
+function roleFrameworkPageUrl (profileRole) {
+  if (profileRole && JOB_TITLES_INTERACTION_DESIGNER_ROLE_PAGE.has(String(profileRole).trim())) {
+    return `${FRAMEWORK_BASE}/role/interaction-designer`
+  }
+  return `${FRAMEWORK_BASE}/role/service-designer`
+}
+
+function getExpectedLevelKeyForSkillAndRole (skillKey, role) {
+  const track = getFrameworkTrackKeyForJobTitle(role)
+  const matrix = FRAMEWORK_TRACK_SKILL_LEVELS[track]
+  if (!matrix || !matrix[skillKey]) return 'working'
+  return matrix[skillKey] || 'working'
+}
+
+function getExpectedBandForSkillAndRole (skillKey, role) {
+  const levelKey = getExpectedLevelKeyForSkillAndRole(skillKey, role)
+  return LEVEL_BANDS.find((b) => b.key === levelKey) || LEVEL_BANDS[0]
+}
+
+/** @deprecated Use getExpectedBandForSkillAndRole(skillKey, role); kept for callers that still use a single band. */
+function getExpectedLevelKeyForRole (role) {
+  return getExpectedLevelKeyForSkillAndRole('design_communication', role)
+}
+
+/** @deprecated Use getExpectedBandForSkillAndRole */
+function getExpectedBandForRole (role) {
+  return getExpectedBandForSkillAndRole('design_communication', role)
+}
 
 /**
  * Seven skills — keys match DB skill_key; frameworkHash is the on-page anchor on /skills.
@@ -132,6 +259,14 @@ module.exports = {
   SCORE_LABELS,
   skillFrameworkUrl,
   rolePageExamplesUrl,
+  roleFrameworkPageUrl,
+  GDAD_SKILLS_MATRIX_URL,
+  getFrameworkTrackKeyForJobTitle,
+  getFrameworkRolePageLabel,
+  getExpectedLevelKeyForSkillAndRole,
+  getExpectedBandForSkillAndRole,
+  getExpectedLevelKeyForRole,
+  getExpectedBandForRole,
   isAccessibilityOnlyRole,
   isGdAdEvidenceApplicableRole,
   isGdAdScorer,

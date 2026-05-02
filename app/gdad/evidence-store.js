@@ -65,6 +65,23 @@ function sanitiseEvidencePayloadFullForm (body) {
   return out
 }
 
+/** One skill only — for POST /my-gdad-evidence/:skillKey */
+function sanitiseEvidencePayloadSingleSkill (body, skillKey) {
+  if (!SKILL_KEY_SET.has(skillKey)) {
+    const err = new Error('invalid_skill')
+    err.skillKey = skillKey
+    throw err
+  }
+  const raw = body && body[`evidence_${skillKey}`]
+  const s = String(raw == null ? '' : raw).trim()
+  if (s.length > MAX_EVIDENCE_LENGTH) {
+    const err = new Error('evidence_too_long')
+    err.skillKey = skillKey
+    throw err
+  }
+  return { [skillKey]: s }
+}
+
 function sanitiseScorePayload (body) {
   const out = {}
   if (!body || typeof body !== 'object') return out
@@ -122,6 +139,7 @@ module.exports = {
   listEvidenceForUser,
   sanitiseEvidencePayload,
   sanitiseEvidencePayloadFullForm,
+  sanitiseEvidencePayloadSingleSkill,
   sanitiseScorePayload,
   upsertEvidenceForUser,
   upsertScoresForUser

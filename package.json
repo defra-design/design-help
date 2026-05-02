@@ -9,9 +9,12 @@
   },
   "homepage": "https://github.com/defra-design/design-help#readme",
   "scripts": {
+    "predev": "node scripts/clean-prototype-tmp.js",
     "dev": "govuk-prototype-kit dev",
     "serve": "govuk-prototype-kit serve",
-    "start": "govuk-prototype-kit start"
+    "start": "govuk-prototype-kit start",
+    "clean:tmp": "node scripts/clean-prototype-tmp.js",
+    "seed:gdad": "node scripts/seed-gdad-dummy-evidence.js"
   },
   "dependencies": {
     "@govuk-prototype-kit/common-templates": "2.0.1",

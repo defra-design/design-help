@@ -5,6 +5,21 @@
 
 // Add extra styles here
 
+/* Admin tools: horizontal text links at top of admin content */
+.design-help-admin-tools__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.design-help-admin-tools__item {
+  margin: 0;
+}
+
 /* Hide prototype data reset affordance in this research prototype. */
 a[href*="clear-data"] {
   display: none !important;

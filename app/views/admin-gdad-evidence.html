@@ -8,17 +8,28 @@ GDaD evidence — {{ targetName }} - Defra Design Help
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
 
+    {% if isAdmin %}
+    <p class="govuk-body">
+      <a class="govuk-back-link" href="/admin/users">Back to admin</a>
+    </p>
+    {% else %}
     <p class="govuk-body">
       <a class="govuk-back-link" href="/review/gdad-evidence">Back to review list</a>
     </p>
+    {% endif %}
 
     <h1 class="govuk-heading-xl">GDaD evidence — {{ targetName }}</h1>
     <p class="govuk-body"><strong>Job title:</strong> {{ targetRole }}</p>
+    <p class="govuk-body-s govuk-!-margin-bottom-4">
+      DDaT role level for expected standards: <strong>{{ frameworkRoleLabel }}</strong>
+      · <a class="govuk-link" href="{{ roleExamplesUrl }}" target="_blank" rel="noopener noreferrer">Service designer role on the framework (opens in a new tab)</a>
+      · <a class="govuk-link" href="{{ gdadSkillsMatrixUrl }}">Local skills matrix (PNG)</a>
+    </p>
 
-    <div class="govuk-inset-text">
+    <div class="govuk-inset-text govuk-!-margin-bottom-6">
       <p class="govuk-body govuk-!-margin-bottom-0">
         Set official scores: <strong>1</strong> below standard, <strong>2</strong> at standard, <strong>3</strong> above standard.
-        Reference: <a class="govuk-link" href="{{ roleExamplesUrl }}" target="_blank" rel="noopener noreferrer">DDaT capability framework (opens in a new tab)</a>.
+        <a class="govuk-link" href="{{ roleExamplesUrl }}" target="_blank" rel="noopener noreferrer">DDaT capability framework (opens in a new tab)</a>.
       </p>
     </div>
 
@@ -26,20 +37,14 @@ GDaD evidence — {{ targetName }} - Defra Design Help
       {% for skill in skillRows %}
       <div class="govuk-!-margin-bottom-9">
         <h2 class="govuk-heading-m">{{ skill.label }}</h2>
+        <p class="govuk-body-s govuk-!-margin-bottom-2">
+          <strong>Expected standard for this skill ({{ frameworkRoleLabel }}):</strong>
+          <strong class="govuk-tag {{ skill.expectedBand.tagClass }}">{{ skill.expectedBand.label }}</strong>
+        </p>
+        <p class="govuk-body-s govuk-!-margin-bottom-3">{{ skill.expectedBand.description }}</p>
         <p class="govuk-body">
           <a class="govuk-link" href="{{ skill.frameworkUrl }}" target="_blank" rel="noopener noreferrer">Skill on DDaT framework (opens in a new tab)</a>
         </p>
-
-        <div class="govuk-grid-row govuk-!-margin-bottom-4">
-          {% for band in levelBands %}
-          <div class="govuk-grid-column-one-third">
-            <div class="govuk-!-padding-3" style="border: 1px solid #b1b4b6; min-height: 100%;">
-              <strong class="govuk-tag {{ band.tagClass }} govuk-!-margin-bottom-2">{{ band.label }}</strong>
-              <p class="govuk-body-s govuk-!-margin-bottom-0">{{ band.description }}</p>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
 
         <div class="govuk-inset-text">
           {% if skill.evidence_text %}

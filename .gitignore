@@ -7,6 +7,9 @@ node_modules/
 migrate.log
 usage-data-config.json
 
+# Sass
+.sass-cache/
+
 # General ignores
 .DS_Store
 .idea

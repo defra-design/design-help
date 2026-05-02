@@ -138,6 +138,7 @@ Use route middleware (e.g. `ensureEvidenceOwnerOrAdmin`, `ensureGdAdScorer`) and
 | Phase | Scope |
 |--------|--------|
 | **MVP** | Table + migrations; designer CRUD for seven texts; owner + admin/scorer read; scoring UI for scorers only; no leakage to public views. |
+| **Next** | **Scores review** (per designer); **banding** (six-of-seven skills, see §5); **CSV export** of final outcomes — **head of design only** (see §5). |
 | **V2** | Audit log; “submitted for review”; Notify hook. |
 | **V3** | **File uploads** (PDF etc.) — needs **durable object storage** (not Heroku local disk); virus scan and Defra security sign-off. |
 
@@ -178,3 +179,73 @@ When this feature ships, bump **`releaseVersion`** in `app/config.json` and docu
 | `GET/POST /review/gdad-evidence/:userId` | Admin or scorers — read evidence, set scores |
 
 The **DDaT capability framework** site shows role pages (e.g. [service designer](https://ddat-capability-framework.service.gov.uk/role/service-designer)) with tables of skills by level; this app uses a **three-column band** (working / practitioner / expert) plus links to each skill anchor for alignment.
+
+---
+
+## 5. Next phase — scores review, banding, head-of-design export
+
+This section is the **implementation plan** for features agreed after MVP. Build order can follow: **scores review UI** → **banding rules + UI** → **CSV export** (or banding first if data model must land before the review screen).
+
+### 5.1 Per-designer scores review
+
+**Goal:** A dedicated **scores review** view for each GDaD-applicable designer (likely alongside or evolving `/review/gdad-evidence/:userId`).
+
+**Content:**
+
+- List **all seven** skill titles (same `skill_key` set as elsewhere).
+- For each skill, show the **current official score** using the existing 1 / 2 / 3 semantics **or** an explicit **Unscored** (or “Not yet scored”) state when `official_score` is null.
+- Keep evidence text accessible from the same journey if scorers still need context (existing evidence + score form may be merged or linked).
+
+**Access:** Same as today for scoring — **admin** and **`GDAD_SCORER_EMAILS`** (unless product narrows this later).
+
+### 5.2 Banding (six skills from seven)
+
+**Goal:** **Banding** places the designer in an overall band using **six** of the **seven** skill scores. The **final overall** position is derived from those six (product language: total the **six best** scores — exact arithmetic and band thresholds **TBD**).
+
+**Open product inputs (to be supplied):**
+
+- Reference data (file upload / spreadsheet) defining **how** the six contributing scores combine (sum, average, mapped bands, etc.) and **thresholds** for each band.
+- Clarification whether “six best” means **always drop the lowest** of seven scored skills, **exclude one designated skill** from the framework, or **scorer-selected** exclusion — the UI must support **selecting which skills count toward banding** per designer (or a global rule — **TBD**).
+
+**Implementation directions (draft):**
+
+- Persist **which skill keys participate in banding** for each user (or a single global config if policy is fixed). At least one skill may be excluded from the banding aggregate.
+- Store or compute **derived band** (and optionally **numeric aggregate**) server-side for export and display; avoid inconsistent client-only totals.
+- Show on the scores review screen: per-skill score, **included in banding** (yes/no), and **computed band** / **interim total** once rules are coded.
+
+**Depends on:** Uploaded banding spec from the head of profession / design.
+
+### 5.3 CSV export — all designers’ final scores (head of design only)
+
+**Goal:** Download a **CSV** listing **all designers** (GDaD-eligible path) with **final** scoring / banding outcomes suitable for reporting.
+
+**Access control — strict:**
+
+- Available **only** to **head of design** (not all scorers, not all admins unless head of design is also admin).
+- Implement via env allowlist, e.g. **`GDAD_HEAD_OF_DESIGN_EMAILS`** — comma-separated `@defra.gov.uk` addresses (same pattern as `GDAD_SCORER_EMAILS`). Document in `DEPLOYMENT_GUIDE.md` when shipped.
+- Return **403** for everyone else, including admins not on the list.
+
+**CSV content (draft — refine when banding exists):**
+
+- Identifiers: e.g. name, email, user id (minimise PII in line with retention policy).
+- Per-skill official scores and/or **final band** / **aggregate** columns as defined in §5.2.
+- One row per designer; include only eligible roles (same gate as GDaD evidence).
+
+**Route (planned):** e.g. `GET /review/gdad-evidence/export.csv` or `/admin/gdad-scores-export` — **GET**, `Content-Type: text/csv`, `Content-Disposition: attachment`.
+
+### 5.4 Config and compliance
+
+- New **`GDAD_HEAD_OF_DESIGN_EMAILS`** (or agreed name) — required for export feature; empty = export disabled or 403 for all.
+- Treat CSV as **sensitive**; same retention and assurance posture as §3.8.
+
+---
+
+## 6. Related files (update)
+
+Section **4** table still applies; add when implementing §5:
+
+| File / area | Role |
+|-------------|------|
+| `app/gdad/` | Banding calculation, export query, middleware for head-of-design |
+| New migration / columns | Banding participation flags, cached band label or aggregate if needed |
+| `DEPLOYMENT_GUIDE.md` | `GDAD_HEAD_OF_DESIGN_EMAILS` |

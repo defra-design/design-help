@@ -652,7 +652,6 @@ router.use((req, res, next) => {
   res.locals.appVersion = codeReleaseVersion
   res.locals.feedbackLinkHref = '/feedback?return=' + encodeURIComponent(req.path || '/')
   res.locals.showFeedbackFooter = !req.path.startsWith('/feedback')
-  res.locals.activeReviewGdAd = typeof req.path === 'string' && req.path.startsWith('/review/gdad-evidence')
   next()
 })
 
@@ -690,7 +689,8 @@ router.use((req, res, next) => {
     '/public',
     '/assets',
     '/govuk-frontend',
-    '/plugin-assets'
+    '/plugin-assets',
+    '/gdad-reference'
   ]
 
   if (publicPaths.some(path => req.path.startsWith(path)) || req.path === '/' && !req.isAuthenticated()) {
@@ -741,7 +741,6 @@ router.use((req, res, next) => {
   res.locals.feedbackLinkHref = '/feedback?return=' + encodeURIComponent(req.path || '/')
   res.locals.showFeedbackFooter = !req.path.startsWith('/feedback')
   res.locals.isGdAdScorer = isGdAdScorerUser(req.user)
-  res.locals.activeReviewGdAd = typeof req.path === 'string' && req.path.startsWith('/review/gdad-evidence')
   next()
 })
 
