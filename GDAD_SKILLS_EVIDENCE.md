@@ -54,6 +54,21 @@ Deploy the **commit** the tag points to (SHA from `git rev-parse release-2026.05
 
 **Clarify before build:** If designers should not enter “official” scores at all, scope the UI to **evidence text** plus optional **draft self-reflection** only; **official** scores remain scorer-only.
 
+### Who gets GDaD evidence (role gate)
+
+The published **GDaD skills framework** and the seven-skill matrix target **interaction and service design** progression (e.g. SEO / G7 / G6 against those roles). **Accessibility consultants are not on the GDaD framework today** — inclusion is **planned for the future**.
+
+**Product rule:** Do **not** offer GDaD skills evidence (nav link, “My GDaD evidence”, admin scoring for that person) for job titles that are **accessibility specialist / consultant** roles only.
+
+In this app, those are the profile **role** values (see `allowedRoles` in `app/routes.js`):
+
+- `Accessibility Specialist (SEO)`
+- `Senior Accessibility Specialist (Grade 7)`
+
+Everyone else in `allowedRoles` who follows the **interaction / service design** GDaD path should get the feature when it ships. Revisit this gate when Defra / GDS publishes **GDaD-aligned standards for accessibility professionals** and update the doc + code together.
+
+**Implementation note:** Gate by **stored profile `role`** (or a dedicated flag if roles split later). Admins viewing a user whose role is one of the two accessibility titles should **not** see GDaD evidence admin actions for that user (or show a short explanation: “GDaD evidence is not applicable for this role yet”).
+
 ---
 
 ## 3. Implementation plan
@@ -98,6 +113,8 @@ Use route middleware (e.g. `ensureEvidenceOwnerOrAdmin`, `ensureGdAdScorer`) and
 - Ship **structured copy** (JSON or small module) for the seven skill names and SEO/G7/G6 **expected standards** text (from GOV.UK / your matrix) for read-only display next to each field — don’t rely on the PNG alone (accessibility and versioning).
 
 ### 3.5 UI (suggested)
+
+**Role gate:** Only show GDaD evidence entry points for users whose profile **role** is **not** an accessibility-only title (see **Who gets GDaD evidence** above). Hide nav link and routes for excluded roles; return 404 or a clear “not applicable” page if accessed directly.
 
 **Designer**
 
