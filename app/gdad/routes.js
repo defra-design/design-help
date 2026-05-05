@@ -35,6 +35,7 @@ const TEMPLATE_GRADE_CONFIG = {
   g7: { label: 'G7', role: 'Senior Service Designer' },
   g6: { label: 'G6', role: 'Principal Service Designer' }
 }
+const SKILL_ROUTE_PATTERN = Array.from(SKILL_KEY_SET).join('|')
 const defaultHeadOfDesignEmails = ['pete.smith@defra.gov.uk']
 const gdadHeadOfDesignEmails = new Set(
   (process.env.GDAD_HEAD_OF_DESIGN_EMAILS ? process.env.GDAD_HEAD_OF_DESIGN_EMAILS.split(',') : defaultHeadOfDesignEmails)
@@ -274,7 +275,7 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.get('/my-gdad-evidence/:skillKey', ensureAuthenticated, ensureGdAdEvidenceApplicable, async (req, res) => {
+  router.get(`/my-gdad-evidence/:skillKey(${SKILL_ROUTE_PATTERN})`, ensureAuthenticated, ensureGdAdEvidenceApplicable, async (req, res) => {
     const skillKey = String(req.params.skillKey || '').trim()
     if (!SKILL_KEY_SET.has(skillKey)) {
       return res.status(404).send('Not found')
@@ -301,7 +302,7 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.post('/my-gdad-evidence/:skillKey', ensureAuthenticated, ensureGdAdEvidenceApplicable, async (req, res) => {
+  router.post(`/my-gdad-evidence/:skillKey(${SKILL_ROUTE_PATTERN})`, ensureAuthenticated, ensureGdAdEvidenceApplicable, async (req, res) => {
     const skillKey = String(req.params.skillKey || '').trim()
     if (!SKILL_KEY_SET.has(skillKey)) {
       return res.status(404).send('Not found')
@@ -352,7 +353,12 @@ function registerGdAdRoutes (router, deps) {
         })
       }
 
-      const csvText = String(req.file.buffer || '').trim()
+      let csvText = req.file.buffer.toString('utf8')
+      // Some spreadsheet exports use UTF-16LE; UTF-8 decode leaves many NULs.
+      if (csvText.includes('\u0000')) {
+        csvText = req.file.buffer.toString('utf16le')
+      }
+      csvText = String(csvText || '').trim()
       if (!csvText) {
         return res.status(400).render('my-gdad-evidence-import', {
           pageName: 'Import GDaD evidence from CSV',

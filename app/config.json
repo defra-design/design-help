@@ -1,6 +1,6 @@
 {
   "serviceName": "Defra DDTS Design Help",
-  "releaseVersion": "2026.05.05.3",
+  "releaseVersion": "2026.05.05.4",
   "plugins": {
     "govuk-frontend": {
       "rebrand": true
