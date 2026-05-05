@@ -35,7 +35,7 @@ const authBypassUser = {
 let resolvedAuthBypassUser = null
 const hardcodedAdminEmails = [
   'pete.smith@defra.gov.uk',
-  'chris.hawker@defra.gov.uk',
+  'christopher.hawker@defra.gov.uk',
   'louise.tudor@defra.gov.uk'
 ]
 const adminEmails = new Set(
@@ -51,7 +51,7 @@ const headOfDesignEmails = new Set(
 )
 const defaultApprovedEmails = [
   'pete.smith@defra.gov.uk',
-  'chris.hawker@defra.gov.uk',
+  'christopher.hawker@defra.gov.uk',
   'louise.tudor@defra.gov.uk'
 ]
 const approvedEmailsFallback = new Set(
