@@ -96,18 +96,89 @@
   color: #003d22 !important;
 }
 
-/* Footer: green palette refresh */
+/* Footer: one light-green band (flex shell avoids margin-collapse gaps that showed body white) */
 .govuk-footer__meta {
   border-top-color: #00703c !important;
 }
 
-.govuk-footer,
-.govuk-footer__meta {
-  background-color: #f4faf5;
+.design-help-footer-shell {
+  background-color: #edf7ef !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.design-help-footer-shell .design-help-footer-lead,
+.design-help-footer-shell .govuk-footer,
+.design-help-footer-shell .govuk-footer__meta {
+  background-color: transparent !important;
 }
 
 .govuk-footer {
   border-top-color: #00703c !important;
+}
+
+/* 10px bar + column content; transparent so .design-help-footer-shell colour shows through */
+.design-help-footer-lead {
+  border-top: 10px solid #00703c;
+  color: #0b0c0c;
+}
+
+/* Section-break bottom margin would otherwise collapse past this block into the following <footer> */
+.design-help-footer-shell .design-help-footer-lead .govuk-footer__section-break {
+  margin-bottom: 0 !important;
+}
+
+.design-help-footer-shell .govuk-footer.design-help-footer--meta-only {
+  border-top: none !important;
+  padding-top: 25px !important;
+}
+
+/* Notify-style column band: neutral separators (rebrand defaults use blue) */
+.design-help-footer-lead .govuk-footer__heading {
+  border-bottom-color: #b1b4b6 !important;
+}
+
+.design-help-footer-lead .govuk-footer__heading.govuk-heading-s {
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+}
+
+@media (max-width: 40.0525em) {
+  .design-help-footer-lead .govuk-footer__heading.govuk-heading-s {
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+  }
+}
+
+.design-help-footer-lead .govuk-footer__section-break {
+  border-bottom-color: #b1b4b6 !important;
+}
+
+.design-help-footer-lead .govuk-footer__link:link,
+.design-help-footer-lead .govuk-footer__link:visited {
+  color: #005a30 !important;
+}
+
+.design-help-footer-lead .govuk-footer__link:hover {
+  color: #003d22 !important;
+}
+
+.design-help-footer-lead .govuk-footer__link:focus {
+  color: #0b0c0c !important;
+}
+
+/* Slim footer: no rebrand crown row, no Crown copyright column (OGL row only) */
+.govuk-footer.design-help-footer--meta-only .govuk-footer__crown {
+  display: none !important;
+}
+
+.govuk-footer.design-help-footer--meta-only .govuk-footer__meta-item:not(.govuk-footer__meta-item--grow) {
+  display: none !important;
+}
+
+.govuk-footer.design-help-footer--meta-only .govuk-footer__meta {
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .govuk-footer a:link,
@@ -121,16 +192,6 @@
 
 .govuk-footer a:focus {
   color: #0b0c0c !important;
-}
-
-/* Keep Crown copyright area neutral (black/grey), not green */
-.govuk-footer__copyright-logo,
-.govuk-footer__copyright-logo:link,
-.govuk-footer__copyright-logo:visited,
-.govuk-footer__copyright-logo:hover,
-.govuk-footer__copyright-logo:focus {
-  color: #0b0c0c !important;
-  filter: grayscale(100%) brightness(0) !important;
 }
 
 /* Admin tools: horizontal text links at top of admin content */

@@ -12,7 +12,7 @@ Follow these steps to replace the "console log" simulation with real emails.
 1. Log in to [GOV.UK Notify](https://www.notifications.service.gov.uk/).
 2. Create a **New Template**:
     - **Name**: `Email Verification`
-    - **Subject**: `Design Help - Verify your email`
+    - **Subject**: `Design help - Verify your email`
     - **Content**:
 
         ```
@@ -20,7 +20,7 @@ Follow these steps to replace the "console log" simulation with real emails.
 
         Your verification code is: ((code))
 
-        Enter this code to access the Design Help tool.
+        Enter this code to access the Design help tool.
         ```
 
     - *Note*: The `((code))` part is a variable we will fill in from the app.

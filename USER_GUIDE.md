@@ -1,4 +1,4 @@
-# How the Defra Design Help Tool Works
+# How the Defra Design help tool works
 
 This tool is a dedicated space for the Defra design community to connect, share skills, and find support. Whether you need a quick design review, long-term coaching, or just someone to bounce ideas off, this platform helps you find the right colleague.
 

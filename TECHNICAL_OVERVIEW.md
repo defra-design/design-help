@@ -1,6 +1,6 @@
 # How the App Works (Under the Hood)
 
-This document explains the technology behind the "Defra Design Help" tool in simple terms. It describes where data lives, how we keep it safe, and how the different parts of the system talk to each other.
+This document explains the technology behind the "Defra Design help" tool in simple terms. It describes where data lives, how we keep it safe, and how the different parts of the system talk to each other.
 
 ## 1. The "Engine": Node.js
 

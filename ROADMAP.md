@@ -1,4 +1,4 @@
-# Design Help — deployment roadmap (trimmed)
+# Design help — deployment roadmap (trimmed)
 
 This is the short deployment plan and current status.  
 Detailed run commands live in [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) and Notify setup in [`GOVUK_NOTIFY_GUIDE.md`](GOVUK_NOTIFY_GUIDE.md).

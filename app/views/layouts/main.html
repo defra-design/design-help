@@ -4,12 +4,16 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 #}
 
 {% extends "govuk-prototype-kit/layouts/govuk-branded.njk" %}
+{% block headIcons %}
+<link rel="icon" sizes="any" href="/public/images/defra-favicon.svg" type="image/svg+xml">
+<link rel="mask-icon" href="/public/images/defra-favicon.svg" color="#005a30">
+{% endblock %}
 {% block header %}
 
 <header class="design-help-brand-header" role="banner">
   <div class="govuk-width-container">
-    <a class="design-help-brand-header__link" href="/" aria-label="Defra DDTS Design Help homepage">
-      <span class="design-help-brand-header__title">Defra DDTS Design Help</span>
+    <a class="design-help-brand-header__link" href="/" aria-label="Defra DDTS Design help homepage">
+      <span class="design-help-brand-header__title">Defra DDTS Design help</span>
     </a>
   </div>
 </header>
@@ -63,20 +67,37 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 {% endblock %}
 
 {% block footer %}
-{% if showFeedbackFooter %}
-<div class="govuk-width-container">
-  <div class="govuk-!-margin-top-6 govuk-section-break govuk-section-break--l govuk-section-break--visible"></div>
-  <h2 class="govuk-heading-s govuk-!-margin-bottom-2">Help improve Design help</h2>
-  <p class="govuk-body-s govuk-!-margin-bottom-4">
-    <a class="govuk-link" href="{{ feedbackLinkHref }}">Give feedback</a> about this service. It takes about 2 minutes.
-  </p>
+{# Flex wrapper stops margin-collapse between lead and <footer> (GOV.UK section-break margin was exposing body white). One green surface: .design-help-footer-shell #}
+<div class="design-help-footer-shell">
+  <div class="design-help-footer-lead">
+    <div class="govuk-width-container govuk-!-padding-top-6">
+      <div class="govuk-footer__navigation">
+        {% if showFeedbackFooter %}
+        <div class="govuk-footer__section govuk-grid-column-one-half">
+          <h2 class="govuk-footer__heading govuk-heading-s">Help improve Design help</h2>
+          <p class="govuk-body-s govuk-!-margin-bottom-0">
+            <a class="govuk-footer__link" href="{{ feedbackLinkHref }}">Give feedback</a>. It takes about 2 minutes.
+          </p>
+        </div>
+        {% endif %}
+        <div class="govuk-footer__section {{ 'govuk-grid-column-one-half' if showFeedbackFooter else 'govuk-grid-column-full' }}">
+          <h2 class="govuk-footer__heading govuk-heading-s">Design help information</h2>
+          <ul class="govuk-footer__list govuk-!-margin-bottom-0">
+            <li class="govuk-footer__list-item">
+              <a class="govuk-footer__link" href="/about">About Design help</a>
+            </li>
+            <li class="govuk-footer__list-item">
+              <a class="govuk-footer__link" href="/how-it-has-been-built">How it has been built</a>
+            </li>
+          </ul>
+          <p class="govuk-body-s govuk-!-margin-top-4 govuk-!-margin-bottom-0">Version: {{ appVersion or 'dev' }}</p>
+        </div>
+      </div>
+      <hr class="govuk-footer__section-break">
+    </div>
+  </div>
+  {{ govukFooter({
+    classes: "design-help-footer--meta-only"
+  }) }}
 </div>
-{% endif %}
-<div class="govuk-width-container">
-  <p class="govuk-body-s govuk-!-margin-top-4 govuk-!-margin-bottom-2">
-    Version: {{ appVersion or 'dev' }} |
-    <a class="govuk-link govuk-link--no-visited-state" href="/about">About this app</a>
-  </p>
-</div>
-{{ govukFooter() }}
 {% endblock %}

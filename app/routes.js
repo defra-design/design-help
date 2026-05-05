@@ -695,6 +695,7 @@ router.use((req, res, next) => {
     '/register',
     '/verify-email',
     '/about',
+    '/how-it-has-been-built',
     '/feedback',
     '/public',
     '/assets',
@@ -792,6 +793,10 @@ router.get('/register', (req, res) => {
 
 router.get('/about', (req, res) => {
   res.render('about')
+})
+
+router.get('/how-it-has-been-built', (req, res) => {
+  res.render('how-it-has-been-built')
 })
 
 router.get('/feedback/thank-you', (req, res) => {

@@ -1,4 +1,4 @@
-# Design Help — team connection platform
+# Design help — team connection platform
 
 A [GOV.UK Prototype Kit](https://prototype-kit.service.gov.uk/docs) web application for connecting designers in your team for coaching, mentoring, design critiques, and mutual support.
 

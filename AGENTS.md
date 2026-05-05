@@ -1,6 +1,6 @@
-# Agent guidance — Design Help
+# Agent guidance — Design help
 
-Use this document when assisting with **Design Help**, a GOV.UK Prototype Kit app (Node.js, PostgreSQL). Keep advice aligned with public-sector service patterns and team wellbeing.
+Use this document when assisting with **Design help**, a GOV.UK Prototype Kit app (Node.js, PostgreSQL). Keep advice aligned with public-sector service patterns and team wellbeing.
 
 ---
 
