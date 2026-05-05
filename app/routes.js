@@ -1,6 +1,9 @@
 //
-// For guidance on how to create routes see:
-// https://prototype-kit.service.gov.uk/docs/create-routes
+// Routes (GOV.UK Prototype Kit): https://prototype-kit.service.gov.uk/docs/create-routes
+//
+// Maintainer: request flow — session → passport → res.locals → profile hints → PUBLIC_WITHOUT_SIGN_IN
+// gate → handlers → registerGdAdRoutes(). Details: /ARCHITECTURE.md in repo root. Keep footer links on
+// /about /how-it-has-been-built /feedback aligned with PUBLIC_WITHOUT_SIGN_IN_* below.
 //
 
 const govukPrototypeKit = require('govuk-prototype-kit')
@@ -683,30 +686,43 @@ router.use(async (req, res, next) => {
   next()
 })
 
+/**
+ * Paths that must work without signing in — keep aligned with unconditional links from
+ * app/views/layouts/main.html footer (About, How it has been built, Give feedback) and related flows.
+ *
+ * Use exact routes for pages; prefixes only where the pathname is truly a subtree (feedback, assets).
+ */
+const PUBLIC_WITHOUT_SIGN_IN_EXACT = new Set([
+  '/login',
+  '/register',
+  '/verify-email',
+  '/about',
+  '/how-it-has-been-built'
+])
+
+const PUBLIC_WITHOUT_SIGN_IN_PREFIX = [
+  '/feedback',
+  '/public',
+  '/assets',
+  '/govuk-frontend',
+  '/plugin-assets',
+  '/gdad-reference'
+]
+
+function isAllowedWithoutAuthentication (pathname) {
+  if (PUBLIC_WITHOUT_SIGN_IN_EXACT.has(pathname)) return true
+  return PUBLIC_WITHOUT_SIGN_IN_PREFIX.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  )
+}
+
 // Global Authentication Guard
 router.use((req, res, next) => {
   if (authBypassEnabled) {
     return next()
   }
 
-  // Allow public routes
-  const publicPaths = [
-    '/login',
-    '/register',
-    '/verify-email',
-    '/about',
-    '/how-it-has-been-built',
-    '/feedback',
-    '/public',
-    '/assets',
-    '/govuk-frontend',
-    '/plugin-assets',
-    '/gdad-reference'
-  ]
-
-  if (publicPaths.some(path => req.path.startsWith(path)) || req.path === '/' && !req.isAuthenticated()) {
-    // Allow / to pass through if not logged in (it typically redirects to /index or /login anyway, but let's be safe)
-    // Actually, let's just allow base public assets.
+  if (isAllowedWithoutAuthentication(req.path) || req.path === '/' && !req.isAuthenticated()) {
     return next()
   }
 

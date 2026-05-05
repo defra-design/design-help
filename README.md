@@ -9,7 +9,7 @@ We are using **AI-augmented coding** (e.g. Cursor and similar tools) to help dev
 ## What is implemented today
 
 - **Stack:** Node.js, GOV.UK Prototype Kit, [GOV.UK Frontend](https://design-system.service.gov.uk/), **PostgreSQL** (via `pg`) for **users** and **profiles**
-- **Sign-in:** Registration and sign-in for **@defra.gov.uk** addresses, with email verification (verification is **still partly simulated in logs** until [GOV.UK Notify](https://www.notifications.service.gov.uk/) is wired—see [ROADMAP.md](ROADMAP.md))
+- **Sign-in:** Registration and sign-in for **@defra.gov.uk** addresses, with email verification via [GOV.UK Notify](https://www.notifications.service.gov.uk/) when `NOTIFY_*` variables are set; otherwise development fallbacks apply (see [GOVUK_NOTIFY_GUIDE.md](GOVUK_NOTIFY_GUIDE.md))
 - **Sessions:** Server-side sessions stored in the database (PostgreSQL session store)
 - **Data:** Profiles and accounts **persist in PostgreSQL** when you use a real database (e.g. on Heroku with [Heroku Postgres](https://devcenter.heroku.com/articles/heroku-postgresql)), not in JSON files on the app server
 
@@ -46,7 +46,7 @@ Legacy sample data may still sit under `app/data/` (e.g. for migration); **day-t
 
 ## Security and data handling
 
-This app stores personal and potentially sensitive professional data (profiles, evidence text, scoring outcomes). Treat it as an internal service with controlled access and clear operational security.
+This app stores personal and potentially sensitive professional data (profiles, evidence text, scoring outcomes). Treat it as an internal service with controlled access and clear operational security. For reviewer-oriented **architecture and middleware order**, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ### Current security posture
 
@@ -83,8 +83,8 @@ This app stores personal and potentially sensitive professional data (profiles, 
 
 ### Prerequisites
 
-- **Node.js** v16, v18, v20, or v22 (the kit does not officially support v24+ yet)
-- A running **PostgreSQL** instance and a **`.env`** in the project root (see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) and [ROADMAP.md](ROADMAP.md) for variables such as `DATABASE_URL` and `SESSION_SECRET`)
+- **Node.js** **20.x** (see `engines` in [`package.json`](package.json)); use the same major version in CI and production images
+- A running **PostgreSQL** instance and a **`.env`** in the project root (see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for variables such as `DATABASE_URL` and `SESSION_SECRET`)
 
 ### Install and run
 
@@ -99,7 +99,8 @@ The app is served at [http://localhost:3000](http://localhost:3000) by default.
 
 | Document | Purpose |
 | ---------- | --------- |
-| [ROADMAP.md](ROADMAP.md) | **Plan** to run on Heroku, enable real email (Notify), persist data, and clean up loose ends |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | **How it works**: request flow, modules, auth model, hints for migrating hosting — for reviewers |
+| [ROADMAP.md](ROADMAP.md) | **Status**: what’s delivered, ops checklist, hardening backlog, platform notes |
 | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Heroku Postgres, config vars, one-off `init-db` and schema steps |
 | [GOVUK_NOTIFY_GUIDE.md](GOVUK_NOTIFY_GUIDE.md) | Notify template, API key, and how your code will send verification emails |
 | [TECHNICAL_OVERVIEW.md](TECHNICAL_OVERVIEW.md) | Plain-English view of how the app, database, and security fit together |
@@ -112,11 +113,13 @@ The app is served at [http://localhost:3000](http://localhost:3000) by default.
 ```text
 app/
 ├── data/              # Sample / migration JSON (not the live store on production)
-├── routes.js         # HTTP routes, auth, profile logic
+├── routes.js         # Main HTTP router: session, Passport, globals, routes; see ARCHITECTURE.md
+├── gdad/             # GDaD evidence, review, CSV (registered from routes.js)
 ├── views/            # Nunjucks/HTML pages
-├── assets/          # JavaScript, Sass
-├── db.js            # PostgreSQL connection pool
-└── config.json
+├── assets/           # JavaScript, Sass, images (e.g. favicon source)
+├── db.js             # PostgreSQL pool
+├── notify.js         # GOV.UK Notify helpers
+└── config.json       # Service name + releaseVersion for footer
 scripts/
 ├── init-db.js                    # Create tables, optional JSON migration
 └── update-schema-verification.js  # Add verification columns to users

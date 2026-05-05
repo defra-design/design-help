@@ -1,45 +1,42 @@
-# Design help — deployment roadmap (trimmed)
+# Design help — status and remaining work
 
-This is the short deployment plan and current status.  
-Detailed run commands live in [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) and Notify setup in [`GOVUK_NOTIFY_GUIDE.md`](GOVUK_NOTIFY_GUIDE.md).
+This file records **what is already in place**, **routine operations**, and **what is left** (hardening, platform choices). Detailed deploy steps remain in [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md); architecture for reviewers is in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-## Current status
+## Delivered (baseline)
 
-| Area | State |
+These items were on the earlier implementation checklist and are **done** at the codebase level:
+
+| Theme | Delivered |
 | --- | --- |
-| Heroku readiness | App structure is deployable (`Procfile` + `npm start`). |
-| Data persistence | Users/profiles/sessions are PostgreSQL-backed. |
-| Auth flow | Register/verify/login flow exists. |
-| Notify | Still the main remaining deployment step in environments where real email is required. |
-| Docs | `DEPLOYMENT_GUIDE.md` is the primary step-by-step deployment doc. |
+| **Hosting shape** | `Procfile` + `npm start`; app runs as a standard GOV.UK Prototype Kit Node process |
+| **Database** | Users, profiles, sessions, GDaD data in PostgreSQL (`app/db.js`, scripts under `scripts/`) |
+| **Identity** | Register → verify → login (`passport-local`, bcrypt, session store in Postgres) |
+| **Email** | GOV.UK Notify wired in code (`app/notify.js`); verification and feedback paths when env vars set — see [`GOVUK_NOTIFY_GUIDE.md`](GOVUK_NOTIFY_GUIDE.md) |
+| **Product surface** | Browse, profiles, offers/requests, admin tools, GDaD evidence/import/review/export |
+| **Public pages** | `/about`, `/how-it-has-been-built`, `/feedback` available without sign-in (see `PUBLIC_WITHOUT_SIGN_IN_*` in `app/routes.js`) |
+| **Docs** | Deployment, Notify, technical overview, architecture note, user-context docs |
 
-## Implementation checklist
+## Operations (ongoing)
 
-1. **Heroku baseline**
-   - App connected to repo
-   - Heroku Postgres attached
-   - `NODE_ENV=production`, `SESSION_SECRET` set
+- **Environment checklist:** `NODE_ENV`, `DATABASE_URL`, `SESSION_SECRET`, Notify keys/template IDs as per [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)
+- **After deploy:** run or confirm schema/init scripts remain valid for fresh databases
+- **Backups:** Rely on the hosting provider’s Postgres backup story (today often Heroku Postgres)
+- **Keep docs honest:** Bump `releaseVersion` in `app/config.json` when merging releasable changes (see [`AGENTS.md`](AGENTS.md))
 
-2. **Initialise database**
-   - Run:
+## Hardening and assurance (recommended next)
 
-   ```bash
-   heroku run node scripts/init-db.js -a YOUR_APP_NAME
-   heroku run node scripts/update-schema-verification.js -a YOUR_APP_NAME
-   ```
+Suggested priorities are aligned with [`README.md`](README.md) § Security recommendations and with [`ARCHITECTURE.md`](ARCHITECTURE.md):
 
-   - Confirm session table exists (or is auto-created)
+- CSRF tokens on mutating POSTs
+- Rate limiting on auth and verification surfaces
+- Verification code expiry and attempt limits; session/cookie hardening review
+- Audit logging for sensitive admin and scoring actions
+- Dependency and container image scanning in CI
+- Light assurance pack (data retention, access review, incident contact) before wider reliance
 
-3. **Wire GOV.UK Notify**
-   - Set `NOTIFY_API_KEY` and `NOTIFY_TEMPLATE_ID`
-   - Ensure production uses real email send path
+Treat **penetration testing / formal threat modelling** as out of scope for the current prototype stance unless governance requires it (`/how-it-has-been-built` documents that honestly).
 
-4. **Smoke test**
-   - Register, verify, login, edit profile
-   - Confirm data persists across dyno restarts
+## Platform strategy
 
-## Remaining backlog
-
-- Complete/validate Notify in target environments.
-- Keep deployment docs aligned (avoid duplicate conflicting instructions).
-- Optional hardening: rate-limits, monitoring, release automation.
+- **Today:** Often deployed on Heroku-style PaaS with attached Postgres — see deployment guide.
+- **Future:** Moving to Defra core delivery platform (or similar) is mainly **rehosting the same artefact** (`npm start`), **managed Postgres + secrets**, and **organisational SSL/network policy**; see the “Migrating hosting” section in [`ARCHITECTURE.md`](ARCHITECTURE.md).

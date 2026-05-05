@@ -62,7 +62,7 @@ The primary maintainer is **not a full-time developer**. When making recommendat
 ## Project facts (quick reference)
 
 - **Stack:** GOV.UK Prototype Kit, GOV.UK Frontend (see `app/config.json` for plugin flags), PostgreSQL via `pg`, server-side sessions.
-- **Canonical docs:** [README.md](README.md), [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md), [ROADMAP.md](ROADMAP.md).
+- **Canonical docs:** [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md), [ROADMAP.md](ROADMAP.md).
 
 ### Release version (when pushing to `main`)
 

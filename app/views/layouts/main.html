@@ -67,7 +67,7 @@ https://prototype-kit.service.gov.uk/docs/how-to-use-layouts
 {% endblock %}
 
 {% block footer %}
-{# Flex wrapper stops margin-collapse between lead and <footer> (GOV.UK section-break margin was exposing body white). One green surface: .design-help-footer-shell #}
+{# Footer links (/about, /how-it-has-been-built, /feedback) must stay in PUBLIC_WITHOUT_SIGN_* in routes.js — no sign-in required. Flex wrapper avoids margin-collapse. #}
 <div class="design-help-footer-shell">
   <div class="design-help-footer-lead">
     <div class="govuk-width-container govuk-!-padding-top-6">

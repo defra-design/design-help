@@ -2,6 +2,8 @@
 
 This document explains the technology behind the "Defra Design help" tool in simple terms. It describes where data lives, how we keep it safe, and how the different parts of the system talk to each other.
 
+For **middleware order, public routes, and migration notes** aimed at code reviewers, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 ## 1. The "Engine": Node.js
 
 Think of **Node.js** as the engine that runs the application. It handles all the logic, like:
