@@ -32,6 +32,13 @@ GDaD evidence — {{ targetName }} - Defra Design Help
         <a class="govuk-link" href="{{ roleExamplesUrl }}" target="_blank" rel="noopener noreferrer">DDaT capability framework (opens in a new tab)</a>.
       </p>
     </div>
+    {% if not canEditScores %}
+    <div class="govuk-inset-text govuk-!-margin-bottom-6">
+      <p class="govuk-body govuk-!-margin-bottom-0">
+        You can review evidence, but only Head of Design can save official scores.
+      </p>
+    </div>
+    {% endif %}
 
     {% if justSaved %}
     <div class="govuk-notification-banner govuk-notification-banner--success" role="status" aria-labelledby="scores-saved-title" data-module="govuk-notification-banner">
@@ -83,7 +90,7 @@ GDaD evidence — {{ targetName }} - Defra Design Help
               <td class="govuk-table__cell">{{ "Present" if skill.evidence_text else "None yet" }}</td>
               <td class="govuk-table__cell">
                 <label class="govuk-visually-hidden" for="score-{{ skill.key }}">Score for {{ skill.label }}</label>
-                <select class="govuk-select" id="score-{{ skill.key }}" name="score_{{ skill.key }}">
+                <select class="govuk-select" id="score-{{ skill.key }}" name="score_{{ skill.key }}" {% if not canEditScores %}disabled{% endif %}>
                   <option value="" {% if not skill.official_score %}selected{% endif %}>Not set</option>
                   <option value="1" {% if skill.official_score == 1 %}selected{% endif %}>1 — Below standard</option>
                   <option value="2" {% if skill.official_score == 2 %}selected{% endif %}>2 — At standard</option>
@@ -99,7 +106,9 @@ GDaD evidence — {{ targetName }} - Defra Design Help
         </table>
       </div>
 
+      {% if canEditScores %}
       <button class="govuk-button" data-module="govuk-button" type="submit">Save scores from table</button>
+      {% endif %}
     </form>
 
   </div>

@@ -59,11 +59,18 @@
       <p class="govuk-body govuk-!-margin-bottom-0 govuk-hint">No evidence submitted yet.</p>
       {% endif %}
     </div>
+    {% if not canEditScores %}
+    <div class="govuk-inset-text govuk-!-margin-bottom-6">
+      <p class="govuk-body govuk-!-margin-bottom-0">
+        You can review evidence, but only Head of Design can save official scores.
+      </p>
+    </div>
+    {% endif %}
 
     <form method="post" action="/review/gdad-evidence/{{ targetUserId }}/{{ skill.key }}" novalidate>
       <div class="govuk-form-group">
         <label class="govuk-label govuk-label--m" for="score-{{ skill.key }}">Official score</label>
-        <select class="govuk-select" id="score-{{ skill.key }}" name="score_{{ skill.key }}">
+        <select class="govuk-select" id="score-{{ skill.key }}" name="score_{{ skill.key }}" {% if not canEditScores %}disabled{% endif %}>
           <option value="" {% if not skill.official_score %}selected{% endif %}>Not set</option>
           <option value="1" {% if skill.official_score == 1 %}selected{% endif %}>1 — Below standard</option>
           <option value="2" {% if skill.official_score == 2 %}selected{% endif %}>2 — At standard</option>
@@ -71,7 +78,9 @@
         </select>
       </div>
 
+      {% if canEditScores %}
       <button class="govuk-button" data-module="govuk-button" type="submit">Save score</button>
+      {% endif %}
     </form>
   </div>
 </div>

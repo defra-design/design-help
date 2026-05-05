@@ -43,6 +43,12 @@ const adminEmails = new Set(
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
 )
+const defaultHeadOfDesignEmails = ['pete.smith@defra.gov.uk']
+const headOfDesignEmails = new Set(
+  (process.env.GDAD_HEAD_OF_DESIGN_EMAILS ? process.env.GDAD_HEAD_OF_DESIGN_EMAILS.split(',') : defaultHeadOfDesignEmails)
+    .map((email) => String(email || '').trim().toLowerCase())
+    .filter(Boolean)
+)
 const defaultApprovedEmails = [
   'pete.smith@defra.gov.uk',
   'chris.hawker@defra.gov.uk',
@@ -246,6 +252,10 @@ function isAdminUser(user) {
 
 function isAdminEmailAddress(email) {
   return Boolean(email && adminEmails.has(String(email).toLowerCase()))
+}
+
+function isHeadOfDesignEmailAddress(email) {
+  return Boolean(email && headOfDesignEmails.has(String(email).trim().toLowerCase()))
 }
 
 const feedbackInboxEmail = String(process.env.FEEDBACK_INBOX_EMAIL || 'pete.smith@defra.gov.uk').trim()
@@ -1208,6 +1218,26 @@ router.post('/admin/users/:id/edit', ensureAdmin, async (req, res) => {
       error: 'Select valid job title and availability values from the list.'
     })
   }
+  if (normalisedRole === 'Head of Design') {
+    const existingProfileRes = await db.query(
+      'SELECT p.contact_email, u.email AS account_email FROM profiles p LEFT JOIN users u ON u.id = p.user_id WHERE p.id = $1 LIMIT 1',
+      [req.params.id]
+    )
+    const existingProfile = existingProfileRes.rows[0] || {}
+    const candidateEmail = String(contactEmailNorm || existingProfile.account_email || existingProfile.contact_email || '').trim().toLowerCase()
+    if (!isHeadOfDesignEmailAddress(candidateEmail)) {
+      return res.render('add-profile', {
+        success: false,
+        profile: profileModel,
+        isAdminMode: true,
+        isWizardMode: false,
+        formAction: `/admin/users/${req.params.id}/edit`,
+        formTitle: 'Edit team member profile',
+        adminReturnUrl: '/admin/users',
+        error: 'Only the designated Head of Design account can use the "Head of Design" job title.'
+      })
+    }
+  }
   if (wordCount(canHelpWithText) > 150 || wordCount(developmentGoalsText) > 150) {
     return res.render('add-profile', {
       success: false,
@@ -1385,6 +1415,26 @@ router.post('/admin/add-profile', ensureAdmin, async (req, res) => {
       error: 'Select a valid GDaD job title from the list.',
       profile: updatedDraft
     })
+  }
+  if (step === 'details' && normalisedRoleForStep === 'Head of Design') {
+    const ceForHeadRole = String(updatedDraft.contact_email || '').trim().toLowerCase()
+    if (!isHeadOfDesignEmailAddress(ceForHeadRole)) {
+      req.session.adminProfileDraft = updatedDraft
+      return res.render('add-profile', {
+        success: false,
+        isAdminMode: true,
+        isWizardMode: true,
+        wizardStep: step,
+        wizardStepIndex: adminProfileWizardSteps.indexOf(step) + 1,
+        wizardStepCount: adminProfileWizardSteps.length,
+        formAction: '/admin/add-profile',
+        formTitle: 'Add team member profile',
+        adminReturnUrl: '/admin/users',
+        adminWizardDraftB64: encodeWizardDraftCarrier(updatedDraft),
+        error: 'Only the designated Head of Design account can use the "Head of Design" job title.',
+        profile: updatedDraft
+      })
+    }
   }
   if (step === 'details' && !normalisedAvailabilityForStep) {
     req.session.adminProfileDraft = updatedDraft
@@ -1927,6 +1977,17 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
       isWizardMode: false,
       formAction: '/my-profile/edit',
       error: 'Select a valid GDaD job title from the list.',
+      ...ctx
+    })
+  }
+  if (normalisedRole === 'Head of Design' && !isHeadOfDesignEmailAddress(req.user && req.user.email)) {
+    const ctx = await getMyProfileFormContext(req)
+    return res.render('add-profile', {
+      success: false,
+      isAdminMode: false,
+      isWizardMode: false,
+      formAction: '/my-profile/edit',
+      error: 'The "Head of Design" job title is reserved for a designated account.',
       ...ctx
     })
   }

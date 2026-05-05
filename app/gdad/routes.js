@@ -35,6 +35,12 @@ const TEMPLATE_GRADE_CONFIG = {
   g7: { label: 'G7', role: 'Senior Service Designer' },
   g6: { label: 'G6', role: 'Principal Service Designer' }
 }
+const defaultHeadOfDesignEmails = ['pete.smith@defra.gov.uk']
+const gdadHeadOfDesignEmails = new Set(
+  (process.env.GDAD_HEAD_OF_DESIGN_EMAILS ? process.env.GDAD_HEAD_OF_DESIGN_EMAILS.split(',') : defaultHeadOfDesignEmails)
+    .map((e) => String(e || '').trim().toLowerCase())
+    .filter(Boolean)
+)
 
 function csvEscape (value) {
   const s = String(value == null ? '' : value)
@@ -171,7 +177,6 @@ function registerGdAdRoutes (router, deps) {
     db,
     ensureAuthenticated,
     isAdminUser,
-    isGdAdScorer,
     getProfileByUserId
   } = deps
 
@@ -191,21 +196,36 @@ function registerGdAdRoutes (router, deps) {
     next()
   }
 
-  function ensureScorerOrAdmin (req, res, next) {
-    if (isAdminUser(req.user) || isGdAdScorer(req.user)) {
+  function ensureReviewAdmin (req, res, next) {
+    if (isAdminUser(req.user)) {
       return next()
     }
-    return res.status(403).send('You do not have permission to set GDaD scores.')
+    return res.status(403).send('You do not have permission to review GDaD evidence.')
   }
 
-  function isHeadOfDesignSelfReview (req, targetUserId) {
-    const isSelf = req.user && Number(req.user.id) === Number(targetUserId)
-    const role = String(res.locals.profileJobRole || '').trim()
-    return Boolean(isSelf && role === 'Head of Design')
+  function canReviewUser (req, targetUserId) {
+    return Boolean(isAdminUser(req.user) && Number.isInteger(Number(targetUserId)))
   }
 
-  function canReviewAndScoreUser (req, targetUserId) {
-    return Boolean(isAdminUser(req.user) || isGdAdScorer(req.user) || isHeadOfDesignSelfReview(req, targetUserId))
+  async function canEditGdadScores (req) {
+    const email = String((req.user && req.user.email) || '').trim().toLowerCase()
+    if (!isAdminUser(req.user) || !email || !gdadHeadOfDesignEmails.has(email)) {
+      return false
+    }
+    const myProfile = await getProfileByUserId(req.user.id)
+    return Boolean(myProfile && String(myProfile.role || '').trim() === 'Head of Design')
+  }
+
+  async function ensureHeadOfDesignScoreEditor (req, res, next) {
+    try {
+      if (await canEditGdadScores(req)) {
+        return next()
+      }
+      return res.status(403).send('Only Head of Design can edit GDaD scores.')
+    } catch (err) {
+      console.error(err)
+      return res.status(500).send('Could not verify scoring permissions.')
+    }
   }
 
   router.get('/gdad-reference/skills-matrix.png', (req, res) => {
@@ -368,7 +388,7 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.get('/review/gdad-evidence', ensureAuthenticated, ensureScorerOrAdmin, async (req, res) => {
+  router.get('/review/gdad-evidence', ensureAuthenticated, ensureReviewAdmin, async (req, res) => {
     try {
       const r = await db.query(`
         SELECT u.id AS user_id, p.name, p.role
@@ -481,10 +501,11 @@ function registerGdAdRoutes (router, deps) {
     if (!Number.isInteger(targetUserId) || targetUserId < 1) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewAndScoreUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to set GDaD scores.')
+    if (!canReviewUser(req, targetUserId)) {
+      return res.status(403).send('You do not have permission to review GDaD evidence.')
     }
     try {
+      const canEditScores = await canEditGdadScores(req)
       const profile = await getProfileByUserId(targetUserId)
       if (!profile) {
         return res.status(404).send('No profile for this user.')
@@ -507,7 +528,7 @@ function registerGdAdRoutes (router, deps) {
         targetUserId,
         targetName: profile.name,
         targetRole: profile.role,
-        readOnlyScores: false,
+        canEditScores,
         justSaved: req.query.saved === '1',
         error: req.query.err === 'invalid' ? 'Select valid score values (1, 2, 3 or Not set).' : null
       })
@@ -517,13 +538,13 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.post('/review/gdad-evidence/:targetUserId', ensureAuthenticated, async (req, res) => {
+  router.post('/review/gdad-evidence/:targetUserId', ensureAuthenticated, ensureHeadOfDesignScoreEditor, async (req, res) => {
     const targetUserId = Number(req.params.targetUserId)
     if (!Number.isInteger(targetUserId) || targetUserId < 1) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewAndScoreUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to set GDaD scores.')
+    if (!canReviewUser(req, targetUserId)) {
+      return res.status(403).send('You do not have permission to review GDaD evidence.')
     }
     try {
       const profile = await getProfileByUserId(targetUserId)
@@ -553,10 +574,11 @@ function registerGdAdRoutes (router, deps) {
     if (!Number.isInteger(targetUserId) || targetUserId < 1 || !SKILL_KEY_SET.has(skillKey)) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewAndScoreUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to set GDaD scores.')
+    if (!canReviewUser(req, targetUserId)) {
+      return res.status(403).send('You do not have permission to review GDaD evidence.')
     }
     try {
+      const canEditScores = await canEditGdadScores(req)
       const profile = await getProfileByUserId(targetUserId)
       if (!profile) {
         return res.status(404).send('No profile for this user.')
@@ -582,6 +604,7 @@ function registerGdAdRoutes (router, deps) {
         gdadSkillsMatrixUrl: GDAD_SKILLS_MATRIX_URL,
         roleExamplesUrl: roleFrameworkPageUrl(profile.role),
         frameworkRoleLabel: getFrameworkRolePageLabel(profile.role),
+        canEditScores,
         justSaved: req.query.saved === '1',
         error: req.query.err === 'invalid' ? 'Select a valid score (1, 2, 3 or Not set).' : null
       })
@@ -591,14 +614,14 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.post('/review/gdad-evidence/:targetUserId/:skillKey', ensureAuthenticated, async (req, res) => {
+  router.post('/review/gdad-evidence/:targetUserId/:skillKey', ensureAuthenticated, ensureHeadOfDesignScoreEditor, async (req, res) => {
     const targetUserId = Number(req.params.targetUserId)
     const skillKey = String(req.params.skillKey || '').trim()
     if (!Number.isInteger(targetUserId) || targetUserId < 1 || !SKILL_KEY_SET.has(skillKey)) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewAndScoreUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to set GDaD scores.')
+    if (!canReviewUser(req, targetUserId)) {
+      return res.status(403).send('You do not have permission to review GDaD evidence.')
     }
     try {
       const profile = await getProfileByUserId(targetUserId)
