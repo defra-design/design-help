@@ -138,7 +138,7 @@ Use route middleware (e.g. `ensureEvidenceOwnerOrAdmin`, `ensureGdAdScorer`) and
 | Phase | Scope |
 |--------|--------|
 | **MVP** | Table + migrations; designer CRUD for seven texts; owner + admin/scorer read; scoring UI for scorers only; no leakage to public views. |
-| **Next** | **Scores review** (per designer); **banding** (six-of-seven skills, see §5); **CSV export** of final outcomes — **head of design only** (see §5). |
+| **Next** | **Scores review** + **information layers** (§5.1, §5.5); **banding** (§5.2); **evidence template import** CSV/XLSX without storing files (§5.6); exports: **head-of-design CSV** (§5.3) and **admin Excel scores table** (§5.7). |
 | **V2** | Audit log; “submitted for review”; Notify hook. |
 | **V3** | **File uploads** (PDF etc.) — needs **durable object storage** (not Heroku local disk); virus scan and Defra security sign-off. |
 
@@ -200,16 +200,28 @@ This section is the **implementation plan** for features agreed after MVP. Build
 
 ### 5.2 Banding (six skills from seven)
 
-**Goal:** **Banding** places the designer in an overall band using **six** of the **seven** skill scores. The **final overall** position is derived from those six (product language: total the **six best** scores — exact arithmetic and band thresholds **TBD**).
+**Goal:** **Banding** places the designer in an overall band using the **best six** of the **seven** official skill scores.
 
-**Open product inputs (to be supplied):**
+**Confirmed rule (from supplied scoring image):**
 
-- Reference data (file upload / spreadsheet) defining **how** the six contributing scores combine (sum, average, mapped bands, etc.) and **thresholds** for each band.
-- Clarification whether “six best” means **always drop the lowest** of seven scored skills, **exclude one designated skill** from the framework, or **scorer-selected** exclusion — the UI must support **selecting which skills count toward banding** per designer (or a global rule — **TBD**).
+- Use the **six highest** official scores (scores are 1, 2, or 3).
+- Compute `total` (sum of best six; min 6, max 18) and optional `average = total / 6`.
+- Map totals to capability levels:
+
+| Capability level | Capability rating | Total score (best 6) | Average boundary |
+|------------------|-------------------|----------------------|------------------|
+| 1 | Developing | 6–8 | 1.00–1.49 |
+| 2 | Proficient Level 1 | 9–11 | 1.50–1.99 |
+| 3 | Proficient Level 2 | 12–13 | 2.00–2.32 |
+| 4 | Proficient Level 3 | 14–15 | 2.33–2.65 |
+| 5 | Accomplished Level 1 | 16–17 | 2.66–2.99 |
+| 6 | Accomplished Level 2 | 18 | 3.00 |
+
+Banding is available only when at least **six skills** have an official score.
 
 **Implementation directions (draft):**
 
-- Persist **which skill keys participate in banding** for each user (or a single global config if policy is fixed). At least one skill may be excluded from the banding aggregate.
+- Persisting explicit “included in banding” flags is **not required** for this rule because best-six selection is deterministic (sort descending and take first six).
 - Store or compute **derived band** (and optionally **numeric aggregate**) server-side for export and display; avoid inconsistent client-only totals.
 - Show on the scores review screen: per-skill score, **included in banding** (yes/no), and **computed band** / **interim total** once rules are coded.
 
@@ -238,6 +250,62 @@ This section is the **implementation plan** for features agreed after MVP. Build
 - New **`GDAD_HEAD_OF_DESIGN_EMAILS`** (or agreed name) — required for export feature; empty = export disabled or 403 for all.
 - Treat CSV as **sensitive**; same retention and assurance posture as §3.8.
 
+### 5.5 Information design — input vs review at individual level
+
+**Goal:** Designers and reviewers see the **appropriate layer** of information on **one user at a time** — enough to submit or score without drowning in unrelated context.
+
+| Audience | Primary goals | Information to show (high level) |
+|----------|----------------|----------------------------------|
+| **Designer** (own evidence) | Enter STAR text; understand expected level | Job-related **expected standard** (working / practitioner / expert) per skill; link to DDaT skill + role page; **official score** only when set, with plain labels; clear **“not yet scored”** when null. |
+| **Scorer / admin** (someone else’s record) | Read evidence; set 1–2–3 consistently | **Who** (name, job title, framework role band); **scores at a glance** (all seven skills: evidence present / absent, current official score or not set); then **per-skill** blocks with full expected-standard text, evidence text, and score control. |
+
+**UX direction:** Keep a **summary layer** (overview table or list) above long-form content on the review screen; keep designer **overview** page (`/my-gdad-evidence`) as the map, **per-skill** page for writing. Revisit after user testing (e.g. separate “scores only” view vs single page — see §5.1).
+
+**Special case — Head of Design self-review (agreed):**
+
+- Allow **Head of Design** to open and save scores on **their own** review route (`/review/gdad-evidence/:selfUserId`) for in-person moderation with their manager.
+- This does **not** grant broader scorer permissions across other users.
+- At a later date, manager-specific delegated access can be added (for example via a dedicated allowlist env var) without changing this self-only rule.
+
+### 5.6 Evidence import from a fixed-layout spreadsheet (no file storage)
+
+**Goal:** Support people who complete a **Defra template** (Excel with consistent cells or a CSV export of that layout). **Upload once** → **extract skill text** → **persist only** structured evidence in **`gdad_evidence_items`** — **do not** store the uploaded file on disk or in the database.
+
+**Feasibility:** **Yes.** Typical pattern:
+
+1. **Download** — serve a **template** (`.csv` and/or `.xlsx`) with one column (or cell range) per `skill_key`, fixed headers; optional row for instructions.
+2. **Upload** — `POST` `multipart/form-data`; read file into a **Buffer** in memory only.
+3. **Parse** — **CSV:** `csv-parse` / fast-csv. **Excel:** `exceljs` or `xlsx` (SheetJS) **read** from buffer; map named columns or fixed cell addresses to **`skill_key`**, trim text, enforce max length server-side as for manual entry.
+4. **Validate** — reject unknown columns, wrong MIME if strict, oversized files (set a sane limit, e.g. 2–5 MB).
+5. **Write** — `upsert` evidence rows for **`req.user`** (designer importing **their own** evidence only unless you later allow admin surrogate upload).
+6. **Discard** — buffer goes out of scope; no temp files (or secure delete if written for streaming).
+
+**Operational notes:**
+
+- Virus scanning of uploads may be required for production estates — confirm with assurance.
+- Optionally **dry-run preview** (“we will save these seven cells — Confirm”) before commit.
+- **Access:** Signed-in GDaD-applicable user; same gate as `/my-gdad-evidence`.
+
+### 5.7 Admin export — scores table as Excel (.xlsx)
+
+**Goal:** An **admin** tool that exports **everyone’s scores** (and agreed identifiers) as a **table** downloadable as **Excel**. **Column layout and headers** — **product to supply** a sample table or spreadsheet; implementation maps SQL → sheet.
+
+**Possible scope (TBD until format arrives):**
+
+- One sheet or multiple (e.g. summary + seven skill columns wide).
+- Rows: GDaD-eligible designers only (same role gate).
+- Cells: identity columns, seven official scores (or blanks), timestamps, computed band once §5.2 exists.
+
+**Access — clarify with sponsors:**
+
+- **Option A:** All **`ADMIN_EMAILS`** (operations / reporting inside support team).
+- **Option B:** Same as **`GDAD_HEAD_OF_DESIGN_EMAILS`** only — stricter parity with §5.3 reporting.
+- **Option C:** Admins export **operational** extract; HoD retains separate **management** CSV (§5.3).
+
+**Technical:** Prefer **`exceljs`** or **`Writable`** workbook stream → `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`; avoid storing file on disk; treat as sensitive data (HTTPS, logging discipline).
+
+**Relationship to §5.3:** §5.3 is the **narrow** head-of-design export (`GDAD_HEAD_OF_DESIGN_EMAILS`). §5.7 is the **broader** admin table Excel — reconcile access rules so they are not contradictory.
+
 ---
 
 ## 6. Related files (update)
@@ -249,3 +317,9 @@ Section **4** table still applies; add when implementing §5:
 | `app/gdad/` | Banding calculation, export query, middleware for head-of-design |
 | New migration / columns | Banding participation flags, cached band label or aggregate if needed |
 | `DEPLOYMENT_GUIDE.md` | `GDAD_HEAD_OF_DESIGN_EMAILS` |
+| Evidence import routes + parse | Multipart handlers, CSV/Xlsx mapping to `skill_key`, optional template download |
+| Admin Excel export route | Aggregate query → `.xlsx` stream; access per §5.7 |
+
+**When §5.6 ships:** document **request body limit** (`express` / reverse proxy, e.g. Heroku nginx) so large spreadsheets do not truncate silently.
+
+When you have the **admin table structure** or the **import template**, add a short **appendix** to this doc or attach the sample filename under **`reference/`** (optional) so implementers freeze column names.

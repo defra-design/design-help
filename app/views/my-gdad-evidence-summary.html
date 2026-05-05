@@ -6,40 +6,113 @@ My GDaD evidence - Defra Design Help
 
 {% block content %}
 <div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
-
+  <div class="govuk-grid-column-full">
     <h1 class="govuk-heading-xl">My GDaD evidence</h1>
 
-    <p class="govuk-body-s govuk-!-margin-bottom-4">
+    <p class="govuk-body-s govuk-!-margin-bottom-2">
       Expected levels match <strong>{{ frameworkRoleLabel }}</strong> on the
       <a class="govuk-link" href="{{ frameworkRolePageUrl }}" target="_blank" rel="noopener noreferrer">DDaT capability framework — designer role (opens in a new tab)</a>.
       <a class="govuk-link" href="{{ gdadSkillsMatrixUrl }}">Local skills matrix (PNG)</a>
     </p>
+    <p class="govuk-body-s govuk-!-margin-bottom-4">
+      <strong>Official scores</strong> (1 to 3) are set after review by your line manager or head of profession. For each skill, a score of <strong>1</strong> means one skill level below expected, <strong>2</strong> means at the expected skill level, and <strong>3</strong> means one skill level above expected.
+      Your overall <strong>capability level</strong> is then calculated separately using your <strong>best six scores</strong> across the seven skills.
+    </p>
 
-    <h2 class="govuk-heading-m">Skills</h2>
-    <ul class="govuk-list">
-      {% for skill in skillRows %}
-      <li class="govuk-!-margin-bottom-4">
-        <div class="govuk-!-margin-bottom-1">
-          <a class="govuk-link govuk-link--no-visited-state govuk-!-font-weight-bold" href="/my-gdad-evidence/{{ skill.key }}">{{ skill.label }}</a>
-        </div>
-        <p class="govuk-body-s govuk-!-margin-bottom-1">
-          <span class="govuk-!-margin-right-2">Expected standard for this skill:</span>
-          <strong class="govuk-tag {{ skill.expectedBand.tagClass }}">{{ skill.expectedBand.label }}</strong>
-        </p>
-        <p class="govuk-body-s govuk-!-margin-top-1 govuk-!-margin-bottom-0">
-          {% if skill.evidence_text %}
-          Evidence added
-          {% else %}
-          No evidence yet
-          {% endif %}
-          {% if skill.official_score %}
-          · Official score: {{ skill.official_score }} — {{ skill.score_label }}
-          {% endif %}
-        </p>
-      </li>
-      {% endfor %}
-    </ul>
+    {% if csvImportUpdatedCount and csvImportUpdatedCount > 0 %}
+    <div class="govuk-notification-banner govuk-notification-banner--success" role="status" aria-labelledby="gdad-import-success-title" data-module="govuk-notification-banner">
+      <div class="govuk-notification-banner__header">
+        <h2 class="govuk-notification-banner__title" id="gdad-import-success-title">Success</h2>
+      </div>
+      <div class="govuk-notification-banner__content">
+        <p class="govuk-notification-banner__heading">Imported evidence for {{ csvImportUpdatedCount }} skill(s).</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <p class="govuk-body">
+      <a class="govuk-link" href="/my-gdad-evidence/import-csv">Import evidence from CSV template</a>.
+      Download blank templates by grade:
+      <a class="govuk-link" href="/gdad-reference/template-seo.csv">SEO</a>,
+      <a class="govuk-link" href="/gdad-reference/template-g7.csv">G7</a>,
+      <a class="govuk-link" href="/gdad-reference/template-g6.csv">G6</a>.
+    </p>
+
+    <div class="govuk-inset-text govuk-!-margin-bottom-6">
+      <h2 class="govuk-heading-s govuk-!-margin-bottom-2">Current capability level (best 6 scores)</h2>
+      {% if capabilityBand.ready and capabilityBand.band %}
+      <p class="govuk-body govuk-!-margin-bottom-1">
+        <strong>Capability level {{ capabilityBand.band.level }} — {{ capabilityBand.band.rating }}</strong>
+      </p>
+      <p class="govuk-body-s govuk-!-margin-bottom-0">
+        Best 6 score total: <strong>{{ capabilityBand.total }}</strong> (average {{ capabilityBand.averageLabel }}), from {{ capabilityBand.scoredSkillsCount }} scored skills.
+      </p>
+      {% else %}
+      <p class="govuk-body govuk-!-margin-bottom-1">
+        Capability level not available yet.
+      </p>
+      <p class="govuk-body-s govuk-!-margin-bottom-0">
+        You need official scores on at least <strong>6 skills</strong>. Currently scored: <strong>{{ capabilityBand.scoredSkillsCount }}</strong>.
+      </p>
+      {% endif %}
+    </div>
+
+    {% if headOfDesignSelfReview %}
+    <p class="govuk-body govuk-!-margin-bottom-6">
+      <a class="govuk-link" href="/review/gdad-evidence/{{ selfUserId }}">Review my official scores (Head of Design special case)</a>
+      with your manager during your in-person review.
+    </p>
+    {% endif %}
+
+    <h2 class="govuk-heading-m">Skills overview</h2>
+
+    <div tabindex="0" class="govuk-!-margin-bottom-8" style="overflow-x: auto;">
+      <table class="govuk-table">
+        <caption class="govuk-table__caption govuk-table__caption--m">Skill name, expected level, graded level and score</caption>
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header">Skill</th>
+            <th scope="col" class="govuk-table__header">Expected level</th>
+            <th scope="col" class="govuk-table__header">Graded level</th>
+            <th scope="col" class="govuk-table__header govuk-table__header--numeric">Score</th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          {% for skill in skillRows %}
+          <tr class="govuk-table__row">
+            <th scope="row" class="govuk-table__header">
+              <a class="govuk-link govuk-link--no-visited-state govuk-!-font-weight-bold" href="/my-gdad-evidence/{{ skill.key }}">{{ skill.label }}</a>
+              <span class="govuk-body-s govuk-!-display-block govuk-!-margin-top-1 govuk-!-margin-bottom-0 govuk-hint">
+                {% if skill.evidence_text %}Evidence added{% else %}No evidence yet{% endif %}
+              </span>
+            </th>
+            <td class="govuk-table__cell">
+              <strong class="govuk-tag {{ skill.expectedBand.tagClass }}">{{ skill.expectedBand.label }}</strong>
+              <span class="govuk-visually-hidden">.</span>
+            </td>
+            <td class="govuk-table__cell">
+              {% if skill.gradedLevel %}
+              <strong class="govuk-tag {{ skill.gradedLevel.tagClass }}">{{ skill.gradedLevel.label }}</strong>
+              {% else %}
+              <span class="govuk-body-s govuk-hint">&mdash;</span>
+              {% endif %}
+            </td>
+            <td class="govuk-table__cell govuk-table__cell--numeric">
+              {% if skill.official_score %}
+              {{ skill.official_score }} ({{ skill.score_label }})
+              {% else %}
+              <span class="govuk-body-s govuk-hint">Not yet set</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="govuk-body-s govuk-!-margin-bottom-6">
+      Open each skill above to write or edit your STAR evidence or to view the framework detail for that skill.
+    </p>
 
   </div>
 </div>

@@ -8,9 +8,11 @@ const FRAMEWORK_BASE = 'https://ddat-capability-framework.service.gov.uk'
 const SKILLS_PATH = `${FRAMEWORK_BASE}/skills`
 
 /** Job titles in this app that are not on the GDaD design skills path yet */
-const ACCESSIBILITY_ONLY_ROLES = new Set([
+const NON_GDAD_ROLES = new Set([
   'Accessibility Specialist (SEO)',
-  'Senior Accessibility Specialist (Grade 7)'
+  'Senior Accessibility Specialist (Grade 7)',
+  'Resource Manager',
+  'Senior Resource Manager'
 ])
 
 const gdadScorerEmails = new Set(
@@ -21,7 +23,7 @@ const gdadScorerEmails = new Set(
 
 function isAccessibilityOnlyRole (role) {
   if (!role) return false
-  return ACCESSIBILITY_ONLY_ROLES.has(String(role).trim())
+  return NON_GDAD_ROLES.has(String(role).trim())
 }
 
 /** True when this job title should see GDaD evidence features (must still have a profile). */
@@ -242,6 +244,115 @@ const SCORE_LABELS = {
   3: 'Above standard'
 }
 
+/**
+ * Capability banding rules supplied for six scored skills (best six from seven total skills).
+ * Total score is the sum of six official scores, each score in {1,2,3}, so range is 6..18.
+ */
+const CAPABILITY_BANDS = [
+  { level: 1, rating: 'Developing', minTotal: 6, maxTotal: 8 },
+  { level: 2, rating: 'Proficient Level 1', minTotal: 9, maxTotal: 11 },
+  { level: 3, rating: 'Proficient Level 2', minTotal: 12, maxTotal: 13 },
+  { level: 4, rating: 'Proficient Level 3', minTotal: 14, maxTotal: 15 },
+  { level: 5, rating: 'Accomplished Level 1', minTotal: 16, maxTotal: 17 },
+  { level: 6, rating: 'Accomplished Level 2', minTotal: 18, maxTotal: 18 }
+]
+
+/**
+ * Official score relative to this skill’s expected band (Working / Practitioner / Expert):
+ * 1 → one band below expected, 2 → at expected, 3 → one band above.
+ * Used on the designer overview so “graded level” is visible alongside the 1–3 score.
+ */
+function getGradedLevelForSkillScore (skillKey, role, officialScore) {
+  if (officialScore == null || officialScore === '' || Number.isNaN(Number(officialScore))) {
+    return null
+  }
+  const score = Number(officialScore)
+  if (score !== 1 && score !== 2 && score !== 3) {
+    return null
+  }
+
+  const expectedBand = getExpectedBandForSkillAndRole(skillKey, role)
+  const trackKey = getFrameworkTrackKeyForJobTitle(role)
+  const isG6Track = trackKey === 'lead_service_designer' || trackKey === 'lead_interaction_designer'
+  const idx = LEVEL_BANDS.findIndex((b) => b.key === expectedBand.key)
+  const safeIdx = idx === -1 ? 0 : idx
+
+  if (score === 2) {
+    return {
+      label: expectedBand.label,
+      tagClass: expectedBand.tagClass,
+      summary: 'At your expected level for this skill'
+    }
+  }
+  if (score === 1) {
+    if (safeIdx <= 0) {
+      return {
+        label: 'Awareness',
+        tagClass: 'govuk-tag--grey',
+        summary: 'Below your expected level for this skill'
+      }
+    }
+    const band = LEVEL_BANDS[safeIdx - 1]
+    return {
+      label: band.label,
+      tagClass: band.tagClass,
+      summary: 'One band below your expected level for this skill'
+    }
+  }
+  if (safeIdx >= LEVEL_BANDS.length - 1) {
+    if (isG6Track && expectedBand.key === 'expert') {
+      return {
+        label: 'Expert +',
+        tagClass: 'govuk-tag--green',
+        summary: 'Above your expected level for this skill'
+      }
+    }
+    return {
+      label: 'Expert',
+      tagClass: 'govuk-tag--green',
+      summary: 'At the top available level for this skill'
+    }
+  }
+  const band = LEVEL_BANDS[safeIdx + 1]
+  return {
+    label: band.label,
+    tagClass: band.tagClass,
+    summary: 'One band above your expected level for this skill'
+  }
+}
+
+/**
+ * Uses a designer's best six official scores (from up to seven skills) to compute capability band.
+ * Returns null until at least six scores are set.
+ */
+function getCapabilityBandFromScores (officialScores) {
+  const validScores = (officialScores || [])
+    .map((s) => Number(s))
+    .filter((s) => s === 1 || s === 2 || s === 3)
+    .sort((a, b) => b - a)
+
+  if (validScores.length < 6) {
+    return {
+      ready: false,
+      scoredSkillsCount: validScores.length
+    }
+  }
+
+  const bestSix = validScores.slice(0, 6)
+  const total = bestSix.reduce((sum, s) => sum + s, 0)
+  const average = total / 6
+  const matchedBand = CAPABILITY_BANDS.find((band) => total >= band.minTotal && total <= band.maxTotal) || null
+
+  return {
+    ready: true,
+    scoredSkillsCount: validScores.length,
+    bestSix,
+    total,
+    average,
+    band: matchedBand
+  }
+}
+
 function skillFrameworkUrl (frameworkHash) {
   return `${SKILLS_PATH}#${frameworkHash}`
 }
@@ -257,6 +368,7 @@ module.exports = {
   SKILL_KEY_SET,
   LEVEL_BANDS,
   SCORE_LABELS,
+  CAPABILITY_BANDS,
   skillFrameworkUrl,
   rolePageExamplesUrl,
   roleFrameworkPageUrl,
@@ -267,6 +379,8 @@ module.exports = {
   getExpectedBandForSkillAndRole,
   getExpectedLevelKeyForRole,
   getExpectedBandForRole,
+  getGradedLevelForSkillScore,
+  getCapabilityBandFromScores,
   isAccessibilityOnlyRole,
   isGdAdEvidenceApplicableRole,
   isGdAdScorer,

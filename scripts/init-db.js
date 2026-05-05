@@ -4,6 +4,34 @@ const path = require('path');
 const bcrypt = require('bcrypt'); // Will need to install bcrypt
 const saltRounds = 10;
 
+const allowedRoles = new Set([
+    'Interaction Designer',
+    'Senior Interaction Designer',
+    'Service Designer',
+    'Senior Service Designer',
+    'Principal Service Designer',
+    'Head of Design',
+    'Design Manager',
+    'Senior Resource Manager',
+    'Accessibility Specialist (SEO)',
+    'Senior Accessibility Specialist (Grade 7)'
+]);
+
+const legacyRoleMap = new Map([
+    ['Lead Designer', 'Principal Service Designer'],
+    ['Lead Service Designer', 'Principal Service Designer'],
+    ['User Researcher', 'Service Designer'],
+    ['Resource Manager', 'Senior Resource Manager']
+]);
+
+function normaliseRoleForProfile(role) {
+    const raw = String(role || '').trim();
+    if (!raw) return null;
+    if (allowedRoles.has(raw)) return raw;
+    if (legacyRoleMap.has(raw)) return legacyRoleMap.get(raw);
+    return 'Service Designer';
+}
+
 async function initDb() {
     const client = await pool.connect();
 
@@ -79,11 +107,29 @@ async function initDb() {
         if (fs.existsSync(teamMembersPath)) {
             console.log('Migrating data from team-members.json...');
             const teamMembers = JSON.parse(fs.readFileSync(teamMembersPath, 'utf8'));
+            const migratedUserPasswordHash = await bcrypt.hash('password', saltRounds);
 
             for (const member of teamMembers) {
+                const normalisedRole = normaliseRoleForProfile(member.role);
+                if (normalisedRole !== member.role) {
+                    console.log(`Normalised role for ${member.id}: "${member.role}" -> "${normalisedRole}"`);
+                }
                 const contactEmail = member.email
                     ? String(member.email).toLowerCase().trim()
                     : null;
+                let linkedUserId = null;
+                if (contactEmail) {
+                    const existingUser = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [contactEmail]);
+                    if (existingUser.rows.length > 0) {
+                        linkedUserId = existingUser.rows[0].id;
+                    } else {
+                        const createdUser = await client.query(
+                            'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id',
+                            [contactEmail, migratedUserPasswordHash]
+                        );
+                        linkedUserId = createdUser.rows[0].id;
+                    }
+                }
                 // Check if profile exists
                 const res = await client.query('SELECT id FROM profiles WHERE id = $1', [member.id]);
                 if (res.rows.length === 0) {
@@ -96,16 +142,17 @@ async function initDb() {
 
                     await client.query(`
                     INSERT INTO profiles (
-                        id, name, project_team, delivery_group, role, location, experience, bio, linkedin_profile,
+                        id, user_id, name, project_team, delivery_group, role, location, experience, bio, linkedin_profile,
                         can_help_with, can_help_with_text, development_goals, development_goals_text, availability_status,
                         contact_email
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 `, [
                         member.id,
+                        linkedUserId,
                         member.name,
                         member.projectTeam || null,
                         member.deliveryGroup || null,
-                        member.role,
+                        normalisedRole,
                         member.location,
                         member.experience,
                         member.bio,
@@ -120,14 +167,18 @@ async function initDb() {
                 } else {
                     await client.query(
                         `UPDATE profiles SET
-                          can_help_with = $1::text[],
-                          can_help_with_text = $2,
-                          contact_email = COALESCE($3, contact_email)
-                        WHERE id = $4`,
+                          role = COALESCE($1, role),
+                          can_help_with = $2::text[],
+                          can_help_with_text = $3,
+                          contact_email = COALESCE($4, contact_email),
+                          user_id = COALESCE($5, user_id)
+                        WHERE id = $6`,
                         [
+                            normalisedRole,
                             member.canHelpWith || [],
                             member.canHelpWithText || null,
                             contactEmail,
+                            linkedUserId,
                             member.id
                         ]
                     );

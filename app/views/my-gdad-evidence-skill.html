@@ -28,10 +28,20 @@
       <p class="govuk-body-s govuk-!-margin-bottom-0">{{ skill.expectedBand.description }}</p>
     </div>
 
-    {% if skill.official_score %}
     <p class="govuk-body">
       <strong>Official score:</strong>
+      {% if skill.official_score %}
       <strong class="govuk-tag govuk-tag--blue">{{ skill.official_score }} — {{ skill.score_label }}</strong>
+      {% else %}
+      <span class="govuk-hint govuk-!-margin-bottom-0">Not yet set — this will appear after review by your line manager or head of profession.</span>
+      {% endif %}
+    </p>
+
+    {% if skill.gradedLevel %}
+    <p class="govuk-body">
+      <strong>Graded level</strong> (from your score against the expected level above):
+      <strong class="govuk-tag {{ skill.gradedLevel.tagClass }}">{{ skill.gradedLevel.label }}</strong>
+      <span class="govuk-visually-hidden">. {{ skill.gradedLevel.summary }}</span>
     </p>
     {% endif %}
 

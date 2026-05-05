@@ -5,6 +5,134 @@
 
 // Add extra styles here
 
+/* Brand header using Defra green */
+.govuk-header {
+  background-color: #005a30;
+}
+
+.govuk-header__container {
+  border-bottom-color: #ffdd00;
+}
+
+.design-help-brand-header {
+  background-color: #005a30;
+}
+
+.design-help-brand-header__link {
+  display: inline-block;
+  padding: 18px 0 16px;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.design-help-brand-header__link:visited,
+.design-help-brand-header__link:link,
+.design-help-brand-header__title {
+  color: #ffffff;
+}
+
+.design-help-brand-header__link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+}
+
+.design-help-brand-header__link:focus {
+  color: #0b0c0c;
+}
+
+.design-help-brand-header__title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Main nav: light green background, dark green text */
+.govuk-service-navigation {
+  background-color: #edf7ef !important;
+  border-bottom-color: #1f3d2a !important;
+}
+
+.govuk-service-navigation__container,
+.govuk-service-navigation__wrapper {
+  background-color: #edf7ef !important;
+}
+
+.govuk-service-navigation__link:link,
+.govuk-service-navigation__link:visited {
+  color: #005a30 !important;
+}
+
+.govuk-service-navigation__item--active .govuk-service-navigation__link,
+.govuk-service-navigation__link:hover {
+  color: #003d22 !important;
+}
+
+.govuk-service-navigation__item--active {
+  border-bottom-color: #00703c !important;
+}
+
+.govuk-service-navigation__item--active .govuk-service-navigation__link {
+  font-weight: 700;
+}
+
+.govuk-service-navigation__link:hover {
+  background-color: #d9eddc !important;
+}
+
+.govuk-service-navigation__link:focus {
+  background-color: #ffdd00 !important;
+  color: #0b0c0c !important;
+}
+
+/* Right-side account links (Admin / My profile / Sign in/out) */
+.govuk-service-navigation .govuk-link,
+.govuk-service-navigation .govuk-link:visited,
+.govuk-service-navigation .govuk-link:link {
+  color: #005a30 !important;
+}
+
+.govuk-service-navigation .govuk-link:hover {
+  color: #003d22 !important;
+}
+
+/* Footer: green palette refresh */
+.govuk-footer__meta {
+  border-top-color: #00703c !important;
+}
+
+.govuk-footer,
+.govuk-footer__meta {
+  background-color: #f4faf5;
+}
+
+.govuk-footer {
+  border-top-color: #00703c !important;
+}
+
+.govuk-footer a:link,
+.govuk-footer a:visited {
+  color: #005a30 !important;
+}
+
+.govuk-footer a:hover {
+  color: #003d22 !important;
+}
+
+.govuk-footer a:focus {
+  color: #0b0c0c !important;
+}
+
+/* Keep Crown copyright area neutral (black/grey), not green */
+.govuk-footer__copyright-logo,
+.govuk-footer__copyright-logo:link,
+.govuk-footer__copyright-logo:visited,
+.govuk-footer__copyright-logo:hover,
+.govuk-footer__copyright-logo:focus {
+  color: #0b0c0c !important;
+  filter: grayscale(100%) brightness(0) !important;
+}
+
 /* Admin tools: horizontal text links at top of admin content */
 .design-help-admin-tools__list {
   display: flex;
