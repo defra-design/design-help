@@ -25,6 +25,7 @@ const {
 } = require('./evidence-store')
 const { parseGdadTemplateCsv } = require('./csv-import')
 
+// CSV import: keep upload in RAM only (no Heroku dyno disk artefact); parse then persist to Postgres.
 const uploadCsv = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 }

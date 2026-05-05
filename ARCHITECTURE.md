@@ -31,6 +31,7 @@ flowchart LR
 - **Presentation:** [`app/views`](app/views) (Nunjucks), GOV.UK Frontend via the kit; extra styling in [`app/assets/sass/application.scss`](app/assets/sass/application.scss).
 - **HTTP surface:** Mostly [`app/routes.js`](app/routes.js). The GDaD feature set is modularised under [`app/gdad/`](app/gdad/) and **registered at the bottom** of `routes.js` via `registerGdAdRoutes(...)`.
 - **Data:** [`app/db.js`](app/db.js) exposes a `pg` pool. **No separate ORM.** SQL is written in routes and gdad modules.
+- **GDaD CSV import:** `multer.memoryStorage()` in [`app/gdad/routes.js`](app/gdad/routes.js) — the file is **never written to the dyno filesystem**; the buffer is decoded, parsed, rows are written with `upsertEvidenceForUser`, then the in-memory copy is released (suitable for ephemeral hosting).
 - **Outbound email:** [`app/notify.js`](app/notify.js) wraps GOV.UK Notify (`notifications-node-client`) for verification and optional service feedback emails.
 
 ## Request flow (conceptual order)
