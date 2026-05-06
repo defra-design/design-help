@@ -54,7 +54,7 @@
     <h2 class="govuk-heading-m">Submitted evidence</h2>
     <div class="govuk-inset-text">
       {% if skill.evidence_text %}
-      <p class="govuk-body govuk-!-margin-bottom-0" style="white-space: pre-wrap;">{{ skill.evidence_text }}</p>
+      {{ skill.evidence_text | markdownToGovukHtml | safe }}
       {% else %}
       <p class="govuk-body govuk-!-margin-bottom-0 govuk-hint">No evidence submitted yet.</p>
       {% endif %}

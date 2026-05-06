@@ -102,7 +102,7 @@
                     </ul>
                     {% endif %}
                     {% if member.can_help_with_text %}
-                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.can_help_with_text }}</p>
+                    {{ member.can_help_with_text | markdownToGovukHtml | safe }}
                     {% endif %}
                     {% if (not member.can_help_with or member.can_help_with.length == 0) and not member.can_help_with_text %}
                     <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No “can help with” detail added yet.</p>
@@ -125,7 +125,7 @@
                     </ul>
                     {% endif %}
                     {% if member.development_goals_text %}
-                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.development_goals_text }}</p>
+                    {{ member.development_goals_text | markdownToGovukHtml | safe }}
                     {% endif %}
                     {% if (not member.development_goals or member.development_goals.length == 0) and not member.development_goals_text %}
                     <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No development goals added yet.</p>
@@ -191,7 +191,7 @@
                     </ul>
                     {% endif %}
                     {% if member.can_help_with_text %}
-                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.can_help_with_text }}</p>
+                    {{ member.can_help_with_text | markdownToGovukHtml | safe }}
                     {% endif %}
                     {% if (not member.can_help_with or member.can_help_with.length == 0) and not member.can_help_with_text %}
                     <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No “can help with” detail added yet.</p>
@@ -214,7 +214,7 @@
                     </ul>
                     {% endif %}
                     {% if member.development_goals_text %}
-                    <p class="govuk-body-s govuk-!-margin-bottom-0">{{ member.development_goals_text }}</p>
+                    {{ member.development_goals_text | markdownToGovukHtml | safe }}
                     {% endif %}
                     {% if (not member.development_goals or member.development_goals.length == 0) and not member.development_goals_text %}
                     <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-hint">No development goals added yet.</p>

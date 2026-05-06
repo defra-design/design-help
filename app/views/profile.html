@@ -78,17 +78,17 @@
     {% endif %}
 
     {% if member.can_help_with_text %}
-    <p class="govuk-body">{{ member.can_help_with_text }}</p>
+    {{ member.can_help_with_text | markdownToGovukHtml | safe }}
     {% endif %}
 
     {% if member.development_goals_text %}
     <h2 class="govuk-heading-m">What I would like help with</h2>
-    <p class="govuk-body">{{ member.development_goals_text }}</p>
+    {{ member.development_goals_text | markdownToGovukHtml | safe }}
     {% endif %}
 
     {% if member.bio %}
     <h2 class="govuk-heading-m">About</h2>
-    <p class="govuk-body">{{ member.bio }}</p>
+    {{ member.bio | markdownToGovukHtml | safe }}
     {% endif %}
 
     {% if member.linkedin_profile %}

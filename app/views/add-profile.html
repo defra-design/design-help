@@ -175,7 +175,7 @@
 
       <div class="govuk-form-group">
         <label class="govuk-label govuk-label--m" for="canHelpWithText">Can help with (free text)</label>
-        <div id="canHelpWithText-hint" class="govuk-hint">Optional additional detail, up to 150 words</div>
+        <div id="canHelpWithText-hint" class="govuk-hint">Optional additional detail, up to 150 words. You can use Markdown for links and bullet points.</div>
         <textarea class="govuk-textarea" id="canHelpWithText" name="canHelpWithText" rows="4"
           aria-describedby="canHelpWithText-hint">{{ profile.can_help_with_text if profile else '' }}</textarea>
       </div>
@@ -184,7 +184,7 @@
       {% if not isWizardMode or wizardStep == "development-goals" %}
       <div class="govuk-form-group">
         <label class="govuk-label govuk-label--m" for="developmentGoalsText">What I would like help with (free text)</label>
-        <div id="developmentGoalsText-hint" class="govuk-hint">Describe longer-term development support you are looking for (up to 150 words)</div>
+        <div id="developmentGoalsText-hint" class="govuk-hint">Describe longer-term development support you are looking for (up to 150 words). You can use Markdown for links and bullet points.</div>
         <textarea class="govuk-textarea" id="developmentGoalsText" name="developmentGoalsText" rows="4"
           aria-describedby="developmentGoalsText-hint">{{ profile.development_goals_text if profile else '' }}</textarea>
       </div>
@@ -193,7 +193,8 @@
       {% if not isWizardMode or wizardStep == "about" %}
       <div class="govuk-form-group">
         <label class="govuk-label govuk-label--m" for="about">About (optional)</label>
-        <textarea class="govuk-textarea" id="about" name="about" rows="5">{{ profile.bio if profile else '' }}</textarea>
+        <div id="about-hint" class="govuk-hint">You can use Markdown for links and bullet points.</div>
+        <textarea class="govuk-textarea" id="about" name="about" rows="5" aria-describedby="about-hint">{{ profile.bio if profile else '' }}</textarea>
       </div>
 
       <div class="govuk-form-group">
