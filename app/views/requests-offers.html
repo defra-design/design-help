@@ -39,10 +39,12 @@
         </p>
         {% endif %}
         {% if entry.can_help_with_text and (freeTextScope == "all" or freeTextScope == "can-help") %}
-        <p class="govuk-body-s govuk-!-margin-bottom-1"><strong>Can help with:</strong> {{ entry.can_help_with_text }}</p>
+        <p class="govuk-body-s govuk-!-margin-bottom-1"><strong>Can help with:</strong></p>
+        {{ entry.can_help_with_text | markdownToGovukHtml | safe }}
         {% endif %}
         {% if entry.development_goals_text and (freeTextScope == "all" or freeTextScope == "development-goals") %}
-        <p class="govuk-body-s govuk-!-margin-bottom-0"><strong>Development goals:</strong> {{ entry.development_goals_text }}</p>
+        <p class="govuk-body-s govuk-!-margin-bottom-1"><strong>Development goals:</strong></p>
+        {{ entry.development_goals_text | markdownToGovukHtml | safe }}
         {% endif %}
       </li>
       {% endfor %}
