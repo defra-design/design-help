@@ -24,6 +24,7 @@ const {
   upsertScoresForUser
 } = require('./evidence-store')
 const { parseGdadTemplateCsv } = require('./csv-import')
+const managementAccess = require('../lib/management-access')
 
 // CSV import: keep upload in RAM only (no Heroku dyno disk artefact); parse then persist to Postgres.
 const uploadCsv = multer({
@@ -37,13 +38,6 @@ const TEMPLATE_GRADE_CONFIG = {
   g6: { label: 'G6', role: 'Principal Service Designer' }
 }
 const SKILL_ROUTE_PATTERN = Array.from(SKILL_KEY_SET).join('|')
-const defaultHeadOfDesignEmails = ['pete.smith@defra.gov.uk']
-const gdadHeadOfDesignEmails = new Set(
-  (process.env.GDAD_HEAD_OF_DESIGN_EMAILS ? process.env.GDAD_HEAD_OF_DESIGN_EMAILS.split(',') : defaultHeadOfDesignEmails)
-    .map((e) => String(e || '').trim().toLowerCase())
-    .filter(Boolean)
-)
-
 function csvEscape (value) {
   const s = String(value == null ? '' : value)
   if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r')) {
@@ -179,8 +173,11 @@ function registerGdAdRoutes (router, deps) {
     db,
     ensureAuthenticated,
     isAdminUser,
-    getProfileByUserId
+    getProfileByUserId,
+    headOfDesignEmails
   } = deps
+
+  const reviewAccessDeps = { db, isAdminUser, getProfileByUserId, headOfDesignEmails }
 
   function ensureGdAdEvidenceApplicable (req, res, next) {
     if (!req.user) {
@@ -205,17 +202,17 @@ function registerGdAdRoutes (router, deps) {
     return res.status(403).send('You do not have permission to review GDaD evidence.')
   }
 
-  function canReviewUser (req, targetUserId) {
-    return Boolean(isAdminUser(req.user) && Number.isInteger(Number(targetUserId)))
+  async function assertGdadReviewAccess (req, res, targetUserId) {
+    const ok = await managementAccess.canReviewGdadEvidenceForTarget(req, targetUserId, reviewAccessDeps)
+    if (!ok) {
+      res.status(403).send('You do not have permission to review GDaD evidence for this person.')
+      return false
+    }
+    return true
   }
 
   async function canEditGdadScores (req) {
-    const email = String((req.user && req.user.email) || '').trim().toLowerCase()
-    if (!isAdminUser(req.user) || !email || !gdadHeadOfDesignEmails.has(email)) {
-      return false
-    }
-    const myProfile = await getProfileByUserId(req.user.id)
-    return Boolean(myProfile && String(myProfile.role || '').trim() === 'Head of Design')
+    return managementAccess.isHeadOfDesignSuperUser(req, { isAdminUser, getProfileByUserId, headOfDesignEmails })
   }
 
   async function ensureHeadOfDesignScoreEditor (req, res, next) {
@@ -429,13 +426,21 @@ function registerGdAdRoutes (router, deps) {
         })
         .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' }))
 
-      const rowsNoOrIncompleteEvidence = eligibleWithStats
+      const visibility = await Promise.all(
+        eligibleWithStats.map(async (row) => ({
+          row,
+          ok: await managementAccess.canReviewGdadEvidenceForTarget(req, row.user_id, reviewAccessDeps)
+        }))
+      )
+      const eligibleVisible = visibility.filter((x) => x.ok).map((x) => x.row)
+
+      const rowsNoOrIncompleteEvidence = eligibleVisible
         .filter((row) => row.skills_with_evidence < SKILLS.length)
 
-      const rowsEvidenceUnscored = eligibleWithStats
+      const rowsEvidenceUnscored = eligibleVisible
         .filter((row) => row.skills_with_evidence >= SKILLS.length && row.skills_scored < SKILLS.length)
 
-      const rowsScoredEvidence = eligibleWithStats
+      const rowsScoredEvidence = eligibleVisible
         .filter((row) => row.skills_scored >= SKILLS.length)
 
       res.render('review-gdad-index', {
@@ -463,7 +468,13 @@ function registerGdAdRoutes (router, deps) {
         ORDER BY LOWER(p.name)
       `)
       const eligible = profilesRes.rows.filter((row) => isGdAdEvidenceApplicableRole(row.role))
-      const userIds = eligible.map((r) => Number(r.user_id))
+      const eligibleFiltered = []
+      for (const row of eligible) {
+        if (await managementAccess.canReviewGdadEvidenceForTarget(req, row.user_id, reviewAccessDeps)) {
+          eligibleFiltered.push(row)
+        }
+      }
+      const userIds = eligibleFiltered.map((r) => Number(r.user_id))
 
       const scoresByUser = new Map()
       if (userIds.length) {
@@ -481,7 +492,7 @@ function registerGdAdRoutes (router, deps) {
         }
       }
 
-      const exportRows = eligible.map((u) => {
+      const exportRows = eligibleFiltered.map((u) => {
         const scoreRow = scoresByUser.get(Number(u.user_id)) || {}
         const out = {
           name: u.name,
@@ -508,8 +519,8 @@ function registerGdAdRoutes (router, deps) {
     if (!Number.isInteger(targetUserId) || targetUserId < 1) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to review GDaD evidence.')
+    if (!(await assertGdadReviewAccess(req, res, targetUserId))) {
+      return
     }
     try {
       const canEditScores = await canEditGdadScores(req)
@@ -550,8 +561,8 @@ function registerGdAdRoutes (router, deps) {
     if (!Number.isInteger(targetUserId) || targetUserId < 1) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to review GDaD evidence.')
+    if (!(await assertGdadReviewAccess(req, res, targetUserId))) {
+      return
     }
     try {
       const profile = await getProfileByUserId(targetUserId)
@@ -581,8 +592,8 @@ function registerGdAdRoutes (router, deps) {
     if (!Number.isInteger(targetUserId) || targetUserId < 1 || !SKILL_KEY_SET.has(skillKey)) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to review GDaD evidence.')
+    if (!(await assertGdadReviewAccess(req, res, targetUserId))) {
+      return
     }
     try {
       const canEditScores = await canEditGdadScores(req)
@@ -627,8 +638,8 @@ function registerGdAdRoutes (router, deps) {
     if (!Number.isInteger(targetUserId) || targetUserId < 1 || !SKILL_KEY_SET.has(skillKey)) {
       return res.status(404).send('Not found')
     }
-    if (!canReviewUser(req, targetUserId)) {
-      return res.status(403).send('You do not have permission to review GDaD evidence.')
+    if (!(await assertGdadReviewAccess(req, res, targetUserId))) {
+      return
     }
     try {
       const profile = await getProfileByUserId(targetUserId)

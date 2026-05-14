@@ -102,6 +102,18 @@ async function initDb() {
     `);
         console.log('Ensured profile_long_term_helping table.');
 
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS profile_manager_allocation (
+        staff_profile_id VARCHAR(255) PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+        manager_profile_id VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT profile_manager_allocation_not_self CHECK (
+          manager_profile_id IS NULL OR staff_profile_id <> manager_profile_id
+        )
+      );
+    `);
+        console.log('Ensured profile_manager_allocation table.');
+
         // Migrate existing data from JSON
         const teamMembersPath = path.join(__dirname, '..', 'app', 'data', 'team-members.json');
         if (fs.existsSync(teamMembersPath)) {

@@ -22,6 +22,7 @@ const {
   isFeedbackNotifyConfigured
 } = require('./notify')
 const { registerGdAdRoutes } = require('./gdad/routes')
+const managementAccess = require('./lib/management-access')
 const { ensureGdadTable } = require('./gdad/evidence-store')
 const {
   isGdAdEvidenceApplicableRole,
@@ -144,7 +145,10 @@ async function ensureLocalDemoAdminAccount () {
   try {
     const passwordHash = await bcrypt.hash(localDemoAdminPassword, 10)
     let userId = null
-    const existingUser = await db.query('SELECT id FROM users WHERE email = $1 LIMIT 1', [localDemoAdminEmail])
+    const existingUser = await db.query(
+      'SELECT id FROM users WHERE LOWER(TRIM(email::text)) = $1 LIMIT 1',
+      [normaliseEmailForAuth(localDemoAdminEmail)]
+    )
     if (existingUser.rows.length > 0) {
       userId = existingUser.rows[0].id
       await db.query(
@@ -214,6 +218,19 @@ db.query(`
   console.error('Long-term helping table create failed', err)
 })
 
+db.query(`
+  CREATE TABLE IF NOT EXISTS profile_manager_allocation (
+    staff_profile_id VARCHAR(255) PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+    manager_profile_id VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT profile_manager_allocation_not_self CHECK (
+      manager_profile_id IS NULL OR staff_profile_id <> manager_profile_id
+    )
+  );
+`).catch((err) => {
+  console.error('Profile manager allocation table create failed', err)
+})
+
 ensureGdadTable(db).catch((err) => {
   console.error('GDaD evidence table create failed', err)
 })
@@ -261,6 +278,11 @@ function isHeadOfDesignEmailAddress(email) {
   return Boolean(email && headOfDesignEmails.has(String(email).trim().toLowerCase()))
 }
 
+/** Defra mailboxes are case-insensitive; align lookups with how people type their address at sign-in. */
+function normaliseEmailForAuth (email) {
+  return String(email || '').trim().toLowerCase()
+}
+
 const feedbackInboxEmail = String(process.env.FEEDBACK_INBOX_EMAIL || 'pete.smith@defra.gov.uk').trim()
 
 function sanitiseFeedbackReturnPath (raw) {
@@ -286,6 +308,21 @@ function ensureAdmin(req, res, next) {
     return next()
   }
   return res.status(403).send('Admin access required')
+}
+
+async function ensureHeadOfDesignSuper (req, res, next) {
+  if (!req.user) {
+    return res.redirect('/login')
+  }
+  try {
+    if (await managementAccess.isHeadOfDesignSuperUser(req, { isAdminUser, getProfileByUserId, headOfDesignEmails })) {
+      return next()
+    }
+    return res.status(403).send('Only Head of Design can manage responsible manager assignments.')
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not verify permissions.')
+  }
 }
 
 function normaliseAllowedRole(role) {
@@ -601,7 +638,10 @@ router.use(async (req, res, next) => {
   if (authBypassEnabled && !req.user) {
     if (!resolvedAuthBypassUser) {
       try {
-        const userRes = await db.query('SELECT id, email FROM users WHERE email = $1 LIMIT 1', [authBypassUser.email])
+        const userRes = await db.query(
+          'SELECT id, email FROM users WHERE LOWER(TRIM(email::text)) = $1 LIMIT 1',
+          [normaliseEmailForAuth(authBypassUser.email)]
+        )
         if (userRes.rows.length > 0) {
           resolvedAuthBypassUser = { ...authBypassUser, id: userRes.rows[0].id, email: userRes.rows[0].email }
         } else {
@@ -619,7 +659,11 @@ router.use(async (req, res, next) => {
 
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
-    const res = await db.query('SELECT * FROM users WHERE email = $1', [username])
+    const emailKey = normaliseEmailForAuth(username)
+    const res = await db.query(
+      'SELECT * FROM users WHERE LOWER(TRIM(email::text)) = $1',
+      [emailKey]
+    )
     if (res.rows.length === 0) {
       return done(null, false, { message: 'Incorrect email.' })
     }
@@ -672,6 +716,7 @@ router.use(async (req, res, next) => {
   res.locals.profileJobRole = null
   res.locals.gdadEvidenceApplicable = false
   res.locals.isGdAdScorer = isGdAdScorerUser(req.user)
+  res.locals.isHeadOfDesignSuperUser = false
   if (!req.user || authBypassEnabled) {
     return next()
   }
@@ -680,6 +725,13 @@ router.use(async (req, res, next) => {
     const jobRole = r.rows[0] && r.rows[0].role
     res.locals.profileJobRole = jobRole
     res.locals.gdadEvidenceApplicable = Boolean(jobRole && isGdAdEvidenceApplicableRole(jobRole))
+    if (isAdminUser(req.user)) {
+      res.locals.isHeadOfDesignSuperUser = await managementAccess.isHeadOfDesignSuperUser(req, {
+        isAdminUser,
+        getProfileByUserId,
+        headOfDesignEmails
+      })
+    }
   } catch (e) {
     console.error('Profile role for layout failed', e)
   }
@@ -981,7 +1033,10 @@ router.post('/register', async (req, res) => {
     console.error(err)
     if (err.code === '23505') { // Unique violation
       try {
-        const existingUserRes = await db.query('SELECT id, is_verified FROM users WHERE email = $1 LIMIT 1', [emailLower])
+        const existingUserRes = await db.query(
+          'SELECT id, is_verified FROM users WHERE LOWER(TRIM(email::text)) = $1 LIMIT 1',
+          [emailLower]
+        )
         const existingUser = existingUserRes.rows[0]
         if (existingUser && !existingUser.is_verified) {
           if (process.env.NODE_ENV === 'production' && !isNotifyConfigured()) {
@@ -1030,13 +1085,16 @@ router.get('/verify-email', (req, res) => {
 router.post('/verify-email', async (req, res) => {
   const { code } = req.body
   const action = String(req.body.action || 'verify').trim().toLowerCase()
-  const email = String(req.body.email || '').trim().toLowerCase()
+  const email = normaliseEmailForAuth(req.body.email)
 
   try {
     if (!email) {
       return res.render('verify-email', verifyEmailPageLocals(req, { email: '', error: 'Enter your email address to continue.' }))
     }
-    const resDb = await db.query('SELECT * FROM users WHERE email = $1', [email])
+    const resDb = await db.query(
+      'SELECT * FROM users WHERE LOWER(TRIM(email::text)) = $1',
+      [email]
+    )
     if (resDb.rows.length === 0) {
       return res.render('verify-email', verifyEmailPageLocals(req, { email, error: 'User not found.' }))
     }
@@ -1640,6 +1698,71 @@ router.get('/admin/long-term-helping', ensureAdmin, async (req, res) => {
   }
 })
 
+router.get('/admin/management-allocations', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
+  try {
+    const staffRes = await db.query(`
+      SELECT p.id, p.name, p.role, p.user_id, a.manager_profile_id
+      FROM profiles p
+      LEFT JOIN profile_manager_allocation a ON a.staff_profile_id = p.id
+      WHERE p.user_id IS NOT NULL
+      ORDER BY LOWER(p.name)
+    `)
+    const mgrRes = await db.query(`
+      SELECT p.id, p.name, p.role
+      FROM profiles p
+      WHERE p.user_id IS NOT NULL
+      ORDER BY LOWER(p.name)
+    `)
+    return res.render('admin-management-allocations', {
+      staffRows: staffRes.rows,
+      managerOptions: mgrRes.rows,
+      saved: req.query.saved === '1',
+      error: null
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not load manager assignments.')
+  }
+})
+
+router.post('/admin/management-allocations', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
+  try {
+    const staffRes = await db.query(
+      'SELECT p.id FROM profiles p WHERE p.user_id IS NOT NULL'
+    )
+    const mgrRes = await db.query(
+      'SELECT p.id FROM profiles p WHERE p.user_id IS NOT NULL'
+    )
+    const validManagers = new Set(mgrRes.rows.map((r) => r.id))
+
+    for (const row of staffRes.rows) {
+      const staffProfileId = row.id
+      const key = `m_${staffProfileId}`
+      const raw = req.body[key]
+      const trimmed = raw === undefined || raw === null ? '' : String(raw).trim()
+      if (!trimmed) {
+        await db.query('DELETE FROM profile_manager_allocation WHERE staff_profile_id = $1', [staffProfileId])
+        continue
+      }
+      if (!validManagers.has(trimmed) || trimmed === staffProfileId) {
+        continue
+      }
+      await db.query(
+        `INSERT INTO profile_manager_allocation (staff_profile_id, manager_profile_id)
+         VALUES ($1, $2)
+         ON CONFLICT (staff_profile_id) DO UPDATE SET
+           manager_profile_id = EXCLUDED.manager_profile_id,
+           updated_at = CURRENT_TIMESTAMP`,
+        [staffProfileId, trimmed]
+      )
+    }
+    return res.redirect('/admin/management-allocations?saved=1')
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not save manager assignments.')
+  }
+})
+
 router.post('/admin/profile/:id/delete', ensureAdmin, async (req, res) => {
   const profileId = req.params.id
   try {
@@ -2102,7 +2225,8 @@ registerGdAdRoutes(router, {
   ensureAuthenticated,
   isAdminUser,
   isGdAdScorer: isGdAdScorerUser,
-  getProfileByUserId
+  getProfileByUserId,
+  headOfDesignEmails
 })
 
 module.exports = router
