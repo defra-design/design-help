@@ -14,14 +14,33 @@ Review GDaD evidence - Defra Design help
     <p class="govuk-body">
       Designers on the GDaD design skills path are shown here. Accessibility specialist and resource manager job titles are excluded.
     </p>
-    {% if isAdmin %}
+    {% if gdadReviewerRole == 'line_manager' %}
+    <p class="govuk-body">
+      You only see designers assigned to you as their responsible manager. You can review and set scores for them.
+    </p>
+    {% elif gdadReviewerRole == 'admin' %}
+    <p class="govuk-body">
+      You only see designers who do not yet have a responsible manager assigned.
+    </p>
+    {% endif %}
+    {% if isHeadOfDesignSuperUser %}
     <p class="govuk-body">
       <a class="govuk-link" href="/review/gdad-evidence/export.csv">Export all scores (CSV)</a>
+    </p>
+    {% elif gdadReviewerRole == 'line_manager' or gdadReviewerRole == 'admin' %}
+    <p class="govuk-body">
+      <a class="govuk-link" href="/review/gdad-evidence/export.csv">Export scores you can access (CSV)</a>
     </p>
     {% endif %}
 
     {% if not rowsNoOrIncompleteEvidence.length and not rowsEvidenceUnscored.length and not rowsScoredEvidence.length %}
+    {% if gdadReviewerRole == 'line_manager' %}
+    <p class="govuk-body">No designers are assigned to you as responsible manager yet.</p>
+    {% elif gdadReviewerRole == 'admin' %}
+    <p class="govuk-body">No unassigned designers with a GDaD-applicable job title right now.</p>
+    {% else %}
     <p class="govuk-body">No designer profiles use a GDaD-applicable job title yet.</p>
+    {% endif %}
     {% else %}
 
     <h2 class="govuk-heading-m">No evidence or incomplete evidence</h2>

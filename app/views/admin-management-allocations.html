@@ -11,8 +11,18 @@
     <h1 class="govuk-heading-xl">Responsible managers</h1>
 
     <p class="govuk-body">
-      Choose who is the responsible manager for each registered team member. This controls who can open their GDaD review pages when a manager is set: the assigned manager and Head of Design can review; other admins cannot. If you leave someone as unassigned, any admin can still review their GDaD evidence.
+      Choose who is the responsible manager for each registered team member. Only people listed on
+      <a class="govuk-link" href="/admin/identify-managers">Identify managers</a>
+      appear in the dropdown. This controls who can open their GDaD review pages when a manager is set: the assigned manager and Head of Design can review; other admins cannot. If you leave someone as unassigned, any admin can still review their GDaD evidence.
     </p>
+
+    {% if not managerOptions or (managerOptions | length) == 0 %}
+    <div class="govuk-inset-text">
+      <p class="govuk-body">
+        No line managers are set yet. Use <a class="govuk-link" href="/admin/identify-managers">Identify managers</a> first, then return here to assign people.
+      </p>
+    </div>
+    {% endif %}
 
     {% if saved %}
     <div class="govuk-notification-banner govuk-notification-banner--success" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
@@ -33,7 +43,7 @@
     <p class="govuk-body govuk-error-message">{{ error }}</p>
     {% endif %}
 
-    {% if staffRows and staffRows.length > 0 %}
+    {% if staffRows and (staffRows | length) > 0 %}
     <form method="post" action="/admin/management-allocations" novalidate>
 
       <table class="govuk-table">
@@ -61,7 +71,7 @@
                 <option value=""{% if not row.manager_profile_id %} selected{% endif %}>Unassigned</option>
                 {% for opt in managerOptions %}
                 {% if opt.id != row.id %}
-                <option value="{{ opt.id }}"{% if opt.id == row.manager_profile_id %} selected{% endif %}>{{ opt.name }}{% if opt.role %} — {{ opt.role }}{% endif %}</option>
+                <option value="{{ opt.id }}"{% if row.manager_profile_id and opt.id == row.manager_profile_id %} selected{% endif %}>{{ opt.name }}{% if opt.role %} — {{ opt.role }}{% endif %}</option>
                 {% endif %}
                 {% endfor %}
               </select>

@@ -114,6 +114,23 @@ async function initDb() {
     `);
         console.log('Ensured profile_manager_allocation table.');
 
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS profile_line_manager (
+        profile_id VARCHAR(255) PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+        console.log('Ensured profile_line_manager table.');
+
+        await client.query(`
+      CREATE TABLE IF NOT EXISTS app_administrators (
+        email VARCHAR(255) PRIMARY KEY,
+        granted_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+        console.log('Ensured app_administrators table.');
+
         // Migrate existing data from JSON
         const teamMembersPath = path.join(__dirname, '..', 'app', 'data', 'team-members.json');
         if (fs.existsSync(teamMembersPath)) {

@@ -195,11 +195,16 @@ function registerGdAdRoutes (router, deps) {
     next()
   }
 
-  function ensureReviewAdmin (req, res, next) {
-    if (isAdminUser(req.user)) {
-      return next()
+  async function ensureGdadReviewSectionAccess (req, res, next) {
+    try {
+      if (await managementAccess.canAccessGdadReviewSection(req, reviewAccessDeps)) {
+        return next()
+      }
+      return res.status(403).send('You do not have permission to review GDaD evidence.')
+    } catch (err) {
+      console.error(err)
+      return res.status(500).send('Could not verify review permissions.')
     }
-    return res.status(403).send('You do not have permission to review GDaD evidence.')
   }
 
   async function assertGdadReviewAccess (req, res, targetUserId) {
@@ -211,16 +216,19 @@ function registerGdAdRoutes (router, deps) {
     return true
   }
 
-  async function canEditGdadScores (req) {
-    return managementAccess.isHeadOfDesignSuperUser(req, { isAdminUser, getProfileByUserId, headOfDesignEmails })
-  }
-
-  async function ensureHeadOfDesignScoreEditor (req, res, next) {
+  async function ensureGdadScoreEditorForTarget (req, res, next) {
+    const targetUserId = Number(req.params.targetUserId)
+    if (!Number.isInteger(targetUserId) || targetUserId < 1) {
+      return res.status(404).send('Not found')
+    }
     try {
-      if (await canEditGdadScores(req)) {
+      if (!(await assertGdadReviewAccess(req, res, targetUserId))) {
+        return
+      }
+      if (await managementAccess.canEditGdadScoresForTarget(req, targetUserId, reviewAccessDeps)) {
         return next()
       }
-      return res.status(403).send('Only Head of Design can edit GDaD scores.')
+      return res.status(403).send('You do not have permission to edit GDaD scores for this person.')
     } catch (err) {
       console.error(err)
       return res.status(500).send('Could not verify scoring permissions.')
@@ -392,7 +400,7 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.get('/review/gdad-evidence', ensureAuthenticated, ensureReviewAdmin, async (req, res) => {
+  router.get('/review/gdad-evidence', ensureAuthenticated, ensureGdadReviewSectionAccess, async (req, res) => {
     try {
       const r = await db.query(`
         SELECT u.id AS user_id, p.name, p.role
@@ -443,12 +451,15 @@ function registerGdAdRoutes (router, deps) {
       const rowsScoredEvidence = eligibleVisible
         .filter((row) => row.skills_scored >= SKILLS.length)
 
+      const gdadReviewerRole = await managementAccess.getGdadReviewerRole(req, reviewAccessDeps)
+
       res.render('review-gdad-index', {
         pageName: 'Review GDaD evidence',
         rowsNoOrIncompleteEvidence,
         rowsEvidenceUnscored,
         rowsScoredEvidence,
-        skillCount: SKILLS.length
+        skillCount: SKILLS.length,
+        gdadReviewerRole
       })
     } catch (err) {
       console.error(err)
@@ -457,8 +468,8 @@ function registerGdAdRoutes (router, deps) {
   })
 
   router.get('/review/gdad-evidence/export.csv', ensureAuthenticated, async (req, res) => {
-    if (!isAdminUser(req.user)) {
-      return res.status(403).send('Only admin users can export GDaD scores.')
+    if (!(await managementAccess.canAccessGdadReviewSection(req, reviewAccessDeps))) {
+      return res.status(403).send('You do not have permission to export GDaD scores.')
     }
     try {
       const profilesRes = await db.query(`
@@ -523,7 +534,7 @@ function registerGdAdRoutes (router, deps) {
       return
     }
     try {
-      const canEditScores = await canEditGdadScores(req)
+      const canEditScores = await managementAccess.canEditGdadScoresForTarget(req, targetUserId, reviewAccessDeps)
       const profile = await getProfileByUserId(targetUserId)
       if (!profile) {
         return res.status(404).send('No profile for this user.')
@@ -556,7 +567,7 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.post('/review/gdad-evidence/:targetUserId', ensureAuthenticated, ensureHeadOfDesignScoreEditor, async (req, res) => {
+  router.post('/review/gdad-evidence/:targetUserId', ensureAuthenticated, ensureGdadScoreEditorForTarget, async (req, res) => {
     const targetUserId = Number(req.params.targetUserId)
     if (!Number.isInteger(targetUserId) || targetUserId < 1) {
       return res.status(404).send('Not found')
@@ -596,7 +607,7 @@ function registerGdAdRoutes (router, deps) {
       return
     }
     try {
-      const canEditScores = await canEditGdadScores(req)
+      const canEditScores = await managementAccess.canEditGdadScoresForTarget(req, targetUserId, reviewAccessDeps)
       const profile = await getProfileByUserId(targetUserId)
       if (!profile) {
         return res.status(404).send('No profile for this user.')
@@ -632,7 +643,7 @@ function registerGdAdRoutes (router, deps) {
     }
   })
 
-  router.post('/review/gdad-evidence/:targetUserId/:skillKey', ensureAuthenticated, ensureHeadOfDesignScoreEditor, async (req, res) => {
+  router.post('/review/gdad-evidence/:targetUserId/:skillKey', ensureAuthenticated, ensureGdadScoreEditorForTarget, async (req, res) => {
     const targetUserId = Number(req.params.targetUserId)
     const skillKey = String(req.params.skillKey || '').trim()
     if (!Number.isInteger(targetUserId) || targetUserId < 1 || !SKILL_KEY_SET.has(skillKey)) {

@@ -23,6 +23,7 @@ const {
 } = require('./notify')
 const { registerGdAdRoutes } = require('./gdad/routes')
 const managementAccess = require('./lib/management-access')
+const adminAccess = require('./lib/admin-access')
 const { ensureGdadTable } = require('./gdad/evidence-store')
 const {
   isGdAdEvidenceApplicableRole,
@@ -42,11 +43,12 @@ const hardcodedAdminEmails = [
   'christopher.hawker@defra.gov.uk',
   'louise.tudor@defra.gov.uk'
 ]
-const adminEmails = new Set(
-  (process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',') : hardcodedAdminEmails)
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean)
+const bootstrapAdminEmailsList = (
+  process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',') : hardcodedAdminEmails
 )
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean)
+adminAccess.initAdminAccess(bootstrapAdminEmailsList)
 const defaultHeadOfDesignEmails = ['pete.smith@defra.gov.uk']
 const headOfDesignEmails = new Set(
   (process.env.GDAD_HEAD_OF_DESIGN_EMAILS ? process.env.GDAD_HEAD_OF_DESIGN_EMAILS.split(',') : defaultHeadOfDesignEmails)
@@ -231,6 +233,31 @@ db.query(`
   console.error('Profile manager allocation table create failed', err)
 })
 
+db.query(`
+  CREATE TABLE IF NOT EXISTS profile_line_manager (
+    profile_id VARCHAR(255) PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`).catch((err) => {
+  console.error('Profile line manager table create failed', err)
+})
+
+db.query(`
+  CREATE TABLE IF NOT EXISTS app_administrators (
+    email VARCHAR(255) PRIMARY KEY,
+    granted_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+`).then(async () => {
+  try {
+    await adminAccess.refreshDynamicAdminEmails(db)
+  } catch (err) {
+    console.error('App administrators load failed', err)
+  }
+}).catch((err) => {
+  console.error('App administrators table create failed', err)
+})
+
 ensureGdadTable(db).catch((err) => {
   console.error('GDaD evidence table create failed', err)
 })
@@ -266,12 +293,12 @@ db.query(`
   console.error('User auth schema update failed', err)
 })
 
-function isAdminUser(user) {
-  return Boolean(user && user.email && adminEmails.has(user.email.toLowerCase()))
+function isAdminUser (user) {
+  return adminAccess.isAdminUser(user)
 }
 
-function isAdminEmailAddress(email) {
-  return Boolean(email && adminEmails.has(String(email).toLowerCase()))
+function isAdminEmailAddress (email) {
+  return adminAccess.isAdminEmailAddress(email)
 }
 
 function isHeadOfDesignEmailAddress(email) {
@@ -303,11 +330,16 @@ const feedbackHowEasyOptions = [
   'Very difficult'
 ]
 
-function ensureAdmin(req, res, next) {
-  if (isAdminUser(req.user)) {
-    return next()
+async function ensureAdmin (req, res, next) {
+  try {
+    if (await adminAccess.isAdminUserLive(db, req.user)) {
+      return next()
+    }
+    return res.status(403).send('Admin access required')
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not verify admin access.')
   }
-  return res.status(403).send('Admin access required')
 }
 
 async function ensureHeadOfDesignSuper (req, res, next) {
@@ -703,7 +735,7 @@ passport.deserializeUser(async (id, done) => {
 // Make user available to all views
 router.use((req, res, next) => {
   res.locals.user = req.user
-  res.locals.isAdmin = isAdminUser(req.user)
+  res.locals.isAdmin = false
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
   res.locals.appVersion = codeReleaseVersion
@@ -717,6 +749,7 @@ router.use(async (req, res, next) => {
   res.locals.gdadEvidenceApplicable = false
   res.locals.isGdAdScorer = isGdAdScorerUser(req.user)
   res.locals.isHeadOfDesignSuperUser = false
+  res.locals.canAccessGdadReview = false
   if (!req.user || authBypassEnabled) {
     return next()
   }
@@ -725,12 +758,17 @@ router.use(async (req, res, next) => {
     const jobRole = r.rows[0] && r.rows[0].role
     res.locals.profileJobRole = jobRole
     res.locals.gdadEvidenceApplicable = Boolean(jobRole && isGdAdEvidenceApplicableRole(jobRole))
-    if (isAdminUser(req.user)) {
-      res.locals.isHeadOfDesignSuperUser = await managementAccess.isHeadOfDesignSuperUser(req, {
-        isAdminUser,
+    const userIsAdmin = await adminAccess.isAdminUserLive(db, req.user)
+    res.locals.isAdmin = userIsAdmin
+    if (userIsAdmin) {
+      const reviewAccessDeps = {
+        db,
+        isAdminUser: (user) => adminAccess.isAdminUserLive(db, user),
         getProfileByUserId,
         headOfDesignEmails
-      })
+      }
+      res.locals.isHeadOfDesignSuperUser = await managementAccess.isHeadOfDesignSuperUser(req, reviewAccessDeps)
+      res.locals.canAccessGdadReview = await managementAccess.canAccessGdadReviewSection(req, reviewAccessDeps)
     }
   } catch (e) {
     console.error('Profile role for layout failed', e)
@@ -810,10 +848,9 @@ async function getProfileByUserId (userId) {
   return r.rows[0] || null
 }
 
-// Make user available in templates
+// Make user available in templates (isAdmin is set in profile/admin middleware above)
 router.use((req, res, next) => {
   res.locals.user = req.user
-  res.locals.isAdmin = isAdminUser(req.user)
   res.locals.currentPath = req.path
   res.locals.isProduction = process.env.NODE_ENV === 'production'
   res.locals.appVersion = codeReleaseVersion
@@ -1133,12 +1170,13 @@ router.post('/verify-email', async (req, res) => {
 
 // --- APP ROUTES ---
 
-router.get('/admin/users', ensureAdmin, async (req, res) => {
+router.get('/admin/users', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
-    const [profilesRes, approvedEmailsRes, usersRes] = await Promise.all([
+    const [profilesRes, approvedEmailsRes, usersRes, dynamicAdminSet] = await Promise.all([
       db.query('SELECT id, user_id, name, role, contact_email FROM profiles'),
       db.query('SELECT id, email FROM approved_emails'),
-      db.query('SELECT id, email FROM users')
+      db.query('SELECT id, email FROM users'),
+      adminAccess.loadDynamicAdminEmailSet(db)
     ])
 
     const usersById = new Map(usersRes.rows.map((user) => [Number(user.id), String(user.email || '').toLowerCase()]))
@@ -1159,9 +1197,10 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
         user_id: profile.user_id,
         name: profile.name,
         role: profile.role,
-        gdad_applicable: Boolean(profile.user_id && isGdAdEvidenceApplicableRole(profile.role)),
         pending_activation: false,
-        is_admin: isAdminEmailAddress(displayEmail)
+        is_admin: adminAccess.isAdminEmailAddressFromSet(displayEmail, dynamicAdminSet),
+        is_bootstrap_admin: adminAccess.isBootstrapAdminEmail(displayEmail),
+        can_manage_admin_access: Boolean(displayEmail && !adminAccess.isBootstrapAdminEmail(displayEmail))
       }
     })
 
@@ -1175,9 +1214,10 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
           user_id: null,
           name: null,
           role: null,
-          gdad_applicable: false,
           pending_activation: true,
-          is_admin: isAdminEmailAddress(approved.email)
+          is_admin: adminAccess.isAdminEmailAddressFromSet(approved.email, dynamicAdminSet),
+          is_bootstrap_admin: adminAccess.isBootstrapAdminEmail(approved.email),
+          can_manage_admin_access: Boolean(approved.email && !adminAccess.isBootstrapAdminEmail(approved.email))
         })
       }
     })
@@ -1195,7 +1235,19 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
         ? 'Enter an email address.'
         : req.query.adminMsg === 'duplicate'
           ? 'That address is already on the allowed list.'
-          : null
+          : req.query.adminMsg === 'admin-granted'
+            ? 'Admin access was granted.'
+            : req.query.adminMsg === 'admin-revoked'
+              ? 'Admin access was removed.'
+              : req.query.adminMsg === 'admin-protected'
+                ? 'That admin cannot be removed here (they are set in service configuration).'
+                : req.query.adminMsg === 'admin-not-listed'
+                  ? 'That person must be on the allowed list or have a registered account before you grant admin access.'
+                  : req.query.adminMsg === 'admin-already'
+                    ? 'That person already has admin access.'
+                    : req.query.adminMsg === 'admin-no-email'
+                      ? 'No email address for that person.'
+                      : null
     return res.render('admin-users', {
       rows,
       changes,
@@ -1204,6 +1256,59 @@ router.get('/admin/users', ensureAdmin, async (req, res) => {
   } catch (err) {
     console.error(err)
     return res.status(500).send('Error loading admin users')
+  }
+})
+
+async function emailEligibleForAdminGrant (emailLower) {
+  const userRes = await db.query(
+    'SELECT 1 FROM users WHERE LOWER(TRIM(email::text)) = $1 LIMIT 1',
+    [emailLower]
+  )
+  if (userRes.rows.length > 0) return true
+  const approvedRes = await db.query(
+    'SELECT 1 FROM approved_emails WHERE LOWER(TRIM(email)) = $1 LIMIT 1',
+    [emailLower]
+  )
+  return approvedRes.rows.length > 0
+}
+
+router.post('/admin/users/grant-admin', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
+  const email = normaliseEmailForAuth(req.body.email)
+  if (!email) {
+    return res.redirect('/admin/users?adminMsg=admin-no-email')
+  }
+  if (!email.endsWith('@defra.gov.uk')) {
+    return res.redirect('/admin/users?adminMsg=not-defra')
+  }
+  if (adminAccess.isAdminEmailAddress(email)) {
+    return res.redirect('/admin/users?adminMsg=admin-already')
+  }
+  try {
+    if (!(await emailEligibleForAdminGrant(email))) {
+      return res.redirect('/admin/users?adminMsg=admin-not-listed')
+    }
+    await adminAccess.grantAdminEmail(db, email, req.user.id)
+    return res.redirect('/admin/users?adminMsg=admin-granted')
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not grant admin access.')
+  }
+})
+
+router.post('/admin/users/revoke-admin', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
+  const email = normaliseEmailForAuth(req.body.email)
+  if (!email) {
+    return res.redirect('/admin/users?adminMsg=admin-no-email')
+  }
+  try {
+    await adminAccess.revokeAdminEmail(db, email)
+    return res.redirect('/admin/users?adminMsg=admin-revoked')
+  } catch (err) {
+    if (err.message === 'bootstrap_admin') {
+      return res.redirect('/admin/users?adminMsg=admin-protected')
+    }
+    console.error(err)
+    return res.status(500).send('Could not remove admin access.')
   }
 })
 
@@ -1698,8 +1803,63 @@ router.get('/admin/long-term-helping', ensureAdmin, async (req, res) => {
   }
 })
 
+router.get('/admin/identify-managers', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
+  try {
+    const [peopleRes, lineManagerRes] = await Promise.all([
+      db.query(`
+        SELECT p.id, p.name, p.role
+        FROM profiles p
+        WHERE p.user_id IS NOT NULL
+        ORDER BY LOWER(p.name)
+      `),
+      db.query('SELECT profile_id FROM profile_line_manager')
+    ])
+    const lineManagerIds = new Set(lineManagerRes.rows.map((row) => row.profile_id))
+    const sortByName = (a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' })
+    const lineManagerRows = []
+    const addCandidateRows = []
+    for (const row of peopleRes.rows) {
+      const person = { ...row, is_line_manager: lineManagerIds.has(row.id) }
+      if (person.is_line_manager) {
+        lineManagerRows.push(person)
+      } else {
+        addCandidateRows.push(person)
+      }
+    }
+    lineManagerRows.sort(sortByName)
+    addCandidateRows.sort(sortByName)
+    return res.render('admin-identify-managers', {
+      lineManagerRows,
+      addCandidateRows,
+      lineManagerCount: lineManagerRows.length,
+      saved: req.query.saved === '1'
+    })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not load line managers.')
+  }
+})
+
+router.post('/admin/identify-managers', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
+  try {
+    const peopleRes = await db.query(
+      'SELECT p.id FROM profiles p WHERE p.user_id IS NOT NULL'
+    )
+    const validIds = new Set(peopleRes.rows.map((r) => r.id))
+    const selected = new Set(
+      [...managementAccess.parseLineManagerIdsFromBody(req.body)].filter((id) => validIds.has(id))
+    )
+    await managementAccess.replaceLineManagers(db, selected)
+    return res.redirect('/admin/identify-managers?saved=1')
+  } catch (err) {
+    console.error(err)
+    return res.status(500).send('Could not save line managers.')
+  }
+})
+
 router.get('/admin/management-allocations', ensureAuthenticated, ensureHeadOfDesignSuper, async (req, res) => {
   try {
+    await managementAccess.pruneInvalidManagerAllocations(db)
     const staffRes = await db.query(`
       SELECT p.id, p.name, p.role, p.user_id, a.manager_profile_id
       FROM profiles p
@@ -1707,15 +1867,10 @@ router.get('/admin/management-allocations', ensureAuthenticated, ensureHeadOfDes
       WHERE p.user_id IS NOT NULL
       ORDER BY LOWER(p.name)
     `)
-    const mgrRes = await db.query(`
-      SELECT p.id, p.name, p.role
-      FROM profiles p
-      WHERE p.user_id IS NOT NULL
-      ORDER BY LOWER(p.name)
-    `)
+    const managerOptions = await managementAccess.listLineManagerProfiles(db)
     return res.render('admin-management-allocations', {
       staffRows: staffRes.rows,
-      managerOptions: mgrRes.rows,
+      managerOptions,
       saved: req.query.saved === '1',
       error: null
     })
@@ -1730,9 +1885,7 @@ router.post('/admin/management-allocations', ensureAuthenticated, ensureHeadOfDe
     const staffRes = await db.query(
       'SELECT p.id FROM profiles p WHERE p.user_id IS NOT NULL'
     )
-    const mgrRes = await db.query(
-      'SELECT p.id FROM profiles p WHERE p.user_id IS NOT NULL'
-    )
+    const mgrRes = await db.query('SELECT profile_id AS id FROM profile_line_manager')
     const validManagers = new Set(mgrRes.rows.map((r) => r.id))
 
     for (const row of staffRes.rows) {
@@ -1745,6 +1898,7 @@ router.post('/admin/management-allocations', ensureAuthenticated, ensureHeadOfDe
         continue
       }
       if (!validManagers.has(trimmed) || trimmed === staffProfileId) {
+        await db.query('DELETE FROM profile_manager_allocation WHERE staff_profile_id = $1', [staffProfileId])
         continue
       }
       await db.query(
@@ -2223,7 +2377,7 @@ router.post('/my-profile/edit', ensureAuthenticated, async (req, res) => {
 registerGdAdRoutes(router, {
   db,
   ensureAuthenticated,
-  isAdminUser,
+  isAdminUser: (user) => adminAccess.isAdminUserLive(db, user),
   isGdAdScorer: isGdAdScorerUser,
   getProfileByUserId,
   headOfDesignEmails

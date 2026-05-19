@@ -11,17 +11,34 @@
     <h1 class="govuk-heading-xl">Admin</h1>
 
     {% if adminMsg %}
+    {% if adminMsg == 'Admin access was granted.' or adminMsg == 'Admin access was removed.' %}
+    <div class="govuk-notification-banner govuk-notification-banner--success" role="region" aria-labelledby="admin-msg-banner-title" data-module="govuk-notification-banner">
+      <div class="govuk-notification-banner__header">
+        <h2 class="govuk-notification-banner__title" id="admin-msg-banner-title">Success</h2>
+      </div>
+      <div class="govuk-notification-banner__content">
+        <p class="govuk-notification-banner__heading">{{ adminMsg }}</p>
+      </div>
+    </div>
+    {% else %}
     <div class="govuk-error-summary" data-module="govuk-error-summary" aria-labelledby="admin-msg-title" role="alert" tabindex="-1">
       <h2 class="govuk-error-summary__title" id="admin-msg-title">
-        Adding someone to the allowed list
+        There is a problem
       </h2>
       <div class="govuk-error-summary__body">
         <p class="govuk-body govuk-!-margin-bottom-0">{{ adminMsg }}</p>
       </div>
     </div>
     {% endif %}
+    {% endif %}
 
-    <p class="govuk-body" style="margin-bottom: 1.5em;">
+    {% if isHeadOfDesignSuperUser %}
+    <p class="govuk-body">
+      As Head of Design you can grant or remove admin access for people on this list. Admins set in service configuration cannot be removed here. Use the GDaD evidence admin tool to review capability evidence.
+    </p>
+    {% endif %}
+
+    <p class="govuk-body govuk-!-margin-bottom-6">
       <a class="govuk-button" data-module="govuk-button" href="/admin/add-profile?new=1">Add team member</a>
     </p>
 
@@ -42,8 +59,7 @@
           <th scope="col" class="govuk-table__header">Job title</th>
           <th scope="col" class="govuk-table__header">Email</th>
           <th scope="col" class="govuk-table__header">Account</th>
-          <th scope="col" class="govuk-table__header">GDaD</th>
-          <th scope="col" class="govuk-table__header">Action</th>
+          <th scope="col" class="govuk-table__header">Actions</th>
         </tr>
       </thead>
       <tbody class="govuk-table__body">
@@ -63,7 +79,9 @@
           <td class="govuk-table__cell">
             {% if row.pending_activation %}
             <strong class="govuk-tag govuk-tag--yellow">Pending</strong>
-            {% elif row.is_admin and row.profile_id %}
+            {% elif row.is_bootstrap_admin %}
+            <strong class="govuk-tag govuk-tag--grey">Service admin</strong>
+            {% elif row.is_admin %}
             <strong class="govuk-tag govuk-tag--blue">Admin</strong>
             {% elif row.profile_id %}
             <strong class="govuk-tag govuk-tag--green">Active</strong>
@@ -72,25 +90,29 @@
             {% endif %}
           </td>
           <td class="govuk-table__cell">
-            {% if row.user_id and row.gdad_applicable %}
-            <a class="govuk-link" href="/review/gdad-evidence/{{ row.user_id }}">Evidence</a>
-            {% elif row.role and not row.gdad_applicable and row.user_id %}
-            <span class="govuk-hint govuk-!-margin-bottom-0">N/A</span>
-            {% else %}
-            —
+            <div class="design-help-admin-users-actions">
+            {% if isHeadOfDesignSuperUser and row.email and row.can_manage_admin_access %}
+              {% if row.is_admin %}
+              <form method="post" action="/admin/users/revoke-admin">
+                <input type="hidden" name="email" value="{{ row.email }}">
+                <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button">Remove admin</button>
+              </form>
+              {% else %}
+              <form method="post" action="/admin/users/grant-admin">
+                <input type="hidden" name="email" value="{{ row.email }}">
+                <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button">Make admin</button>
+              </form>
+              {% endif %}
+            {% elif isHeadOfDesignSuperUser and row.email and row.is_bootstrap_admin %}
+            <span class="govuk-hint govuk-!-margin-bottom-0">Protected admin</span>
             {% endif %}
-          </td>
-          <td class="govuk-table__cell">
-            <div class="govuk-button-group" style="align-items: center;">
             {% if row.profile_id %}
-            <a class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" data-module="govuk-button" href="/admin/users/{{ row.profile_id }}/edit">Edit</a>
-            <a class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" href="/admin/profile/{{ row.profile_id }}/confirm-delete" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove</a>
-            {% elif row.approved_email_id and row.pending_activation %}
-            <a class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" href="/admin/approved-emails/{{ row.approved_email_id }}/confirm-delete" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove</a>
+            <a class="govuk-button govuk-button--secondary" data-module="govuk-button" href="/admin/users/{{ row.profile_id }}/edit">Edit</a>
+            <a class="govuk-button" data-module="govuk-button" href="/admin/profile/{{ row.profile_id }}/confirm-delete" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Delete</a>
             {% elif row.approved_email_id %}
-            <a class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button" href="/admin/approved-emails/{{ row.approved_email_id }}/confirm-delete" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove</a>
-            {% else %}
-            —
+            <a class="govuk-button" data-module="govuk-button" href="/admin/approved-emails/{{ row.approved_email_id }}/confirm-delete" style="background-color: #d4351c; color: #fff; box-shadow: 0 2px 0 #b31c0f;">Remove from list</a>
+            {% elif not isHeadOfDesignSuperUser or not row.email %}
+            <span class="govuk-body">—</span>
             {% endif %}
             </div>
           </td>

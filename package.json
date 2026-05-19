@@ -14,7 +14,8 @@
     "serve": "govuk-prototype-kit serve",
     "start": "govuk-prototype-kit start",
     "clean:tmp": "node scripts/clean-prototype-tmp.js",
-    "seed:gdad": "node scripts/seed-gdad-dummy-evidence.js"
+    "seed:gdad": "node scripts/seed-gdad-dummy-evidence.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@govuk-prototype-kit/common-templates": "2.0.1",
